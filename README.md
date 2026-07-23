@@ -28,3 +28,10 @@ Continue building your app on:
 2. Deploy your chats from the v0 interface
 3. Changes are automatically pushed to this repository
 4. Vercel deploys the latest version from this repository
+
+## Backend connection
+
+The frontend expects the Django API at `http://localhost:8000` by default.
+If your backend runs elsewhere, set `NEXT_PUBLIC_API_BASE_URL` in `.env.local`.
+
+For local development, the app runs on port `5173` so it matches the backend CORS allowlist you shared.

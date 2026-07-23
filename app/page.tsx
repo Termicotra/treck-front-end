@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { WebSidebar } from "@/components/web-sidebar"
 import { WebHeader } from "@/components/web-header"
 import { Dashboard } from "@/components/dashboard"
@@ -8,16 +9,44 @@ import { TrainingModule } from "@/components/training-module"
 import { SimulationModule } from "@/components/simulation-module"
 import { QuizModule } from "@/components/quiz-module"
 import { ProgressModule } from "@/components/progress-module"
-import { LoginScreen } from "@/components/login-screen"
+import { bootstrapAuthSession } from "@/lib/auth"
 
 export type ActiveModule = "dashboard" | "training" | "simulation" | "quiz" | "progress"
 
 export default function Home() {
-  const [loggedIn, setLoggedIn] = useState(false)
+  const router = useRouter()
+  const [authReady, setAuthReady] = useState(false)
   const [activeModule, setActiveModule] = useState<ActiveModule>("dashboard")
 
-  if (!loggedIn) {
-    return <LoginScreen onLogin={() => setLoggedIn(true)} />
+  useEffect(() => {
+    let active = true
+
+    void bootstrapAuthSession()
+      .then((session) => {
+        if (!active) return
+
+        if (!session?.tokens.access) {
+          router.replace("/login")
+          return
+        }
+
+        setAuthReady(true)
+      })
+      .catch(() => {
+        if (active) router.replace("/login")
+      })
+
+    return () => {
+      active = false
+    }
+  }, [router])
+
+  if (!authReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30 text-sm text-muted-foreground">
+        Cargando aplicación...
+      </div>
+    )
   }
 
   const renderModule = () => {

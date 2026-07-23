@@ -1,27 +1,60 @@
 "use client"
 
-import { useState } from "react"
-import { Shield, Eye, EyeOff, Mail, Lock, ArrowRight, UserPlus } from "lucide-react"
+import { useState, type ReactNode, type SyntheticEvent } from "react"
+import { useRouter } from "next/navigation"
+import { Shield, Eye, EyeOff, Lock, ArrowRight, UserPlus, Mail } from "lucide-react"
 import { ParaguayFlag, ParaguayFlagBanner } from "@/components/paraguay-flag"
 import { cn } from "@/lib/utils"
+import { AuthApiError, clearAuthSession, loginWithApi, registerWithApi, saveAuthSession } from "@/lib/auth"
 
-interface LoginScreenProps {
-  onLogin: () => void
+function isValidEmail(email: string) {
+  const value = email.trim()
+  const atIndex = value.indexOf("@")
+  const dotIndex = value.lastIndexOf(".")
+
+  return atIndex > 0 && dotIndex > atIndex + 1 && dotIndex < value.length - 1
 }
 
-export function LoginScreen({ onLogin }: LoginScreenProps) {
+function getPlaceholder(key: keyof { username: string; email: string; password: string; confirm: string }) {
+  if (key === "username") return "juan.perez"
+  if (key === "email") return "correo@ejemplo.com"
+  return "••••••••"
+}
+
+function isDuplicateFieldError(error: AuthApiError, field: "username" | "email") {
+  const details = error.details
+  const message = error.message.toLowerCase()
+
+  if (field === "username") {
+    return (
+      (typeof details === "object" && details !== null && "username" in details) ||
+      message.includes("username") ||
+      message.includes("usuario")
+    )
+  }
+
+  return (
+    (typeof details === "object" && details !== null && "email" in details) ||
+    message.includes("email")
+  )
+}
+
+export function LoginScreen() {
+  const router = useRouter()
   const [mode, setMode] = useState<"login" | "register">("login")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" })
+  const [form, setForm] = useState({ username: "", email: "", password: "", confirm: "" })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [serverMessage, setServerMessage] = useState<string | null>(null)
 
   const validate = () => {
     const next: Record<string, string> = {}
-    if (mode === "register" && !form.name.trim()) next.name = "Ingresa tu nombre completo."
-    if (!form.email.trim()) next.email = "Ingresa un correo electrónico."
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) next.email = "Correo no válido."
+    if (!form.username.trim()) next.username = "Ingresa un nombre de usuario."
+    if (mode === "register" && !form.username.trim()) next.username = "Ingresa un nombre de usuario."
+    if (mode === "register" && form.username.trim().length < 3) next.username = "Mínimo 3 caracteres."
+    if (mode === "register" && form.email.trim() && !isValidEmail(form.email)) next.email = "Correo no válido."
     if (!form.password) next.password = "Ingresa una contraseña."
     else if (form.password.length < 6) next.password = "Mínimo 6 caracteres."
     if (mode === "register" && form.password !== form.confirm) next.confirm = "Las contraseñas no coinciden."
@@ -29,22 +62,91 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     return Object.keys(next).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const applyRegistrationError = (error: unknown) => {
+    if (error instanceof AuthApiError) {
+      if (isDuplicateFieldError(error, "username")) {
+        setErrors((current) => ({
+          ...current,
+          username: "Este nombre de usuario ya está en uso.",
+        }))
+        setServerMessage("El nombre de usuario ya existe.")
+        return true
+      }
+
+      if (isDuplicateFieldError(error, "email")) {
+        setErrors((current) => ({
+          ...current,
+          email: "Este correo ya está en uso.",
+        }))
+        setServerMessage("El correo ya existe.")
+        return true
+      }
+    }
+
+    return false
+  }
+
+  const submitLogin = async () => {
+    const session = await loginWithApi({
+      username: form.username.trim(),
+      password: form.password,
+    })
+
+    saveAuthSession(session)
+    router.replace("/")
+  }
+
+  const submitRegister = async () => {
+    const session = await registerWithApi({
+      username: form.username.trim(),
+      email: form.email.trim() || undefined,
+      password: form.password,
+      passwordConfirm: form.confirm,
+    })
+
+    if (session) {
+      saveAuthSession(session)
+      router.replace("/")
+      return
+    }
+
+    clearAuthSession()
+    setMode("login")
+    setForm((current) => ({ ...current, password: "", confirm: "" }))
+    setServerMessage("Cuenta creada. Ahora puedes iniciar sesión.")
+  }
+
+  const handleSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!validate()) return
+
     setLoading(true)
-    setTimeout(() => {
+    setServerMessage(null)
+
+    try {
+      if (mode === "login") {
+        await submitLogin()
+      } else {
+        await submitRegister()
+      }
+    } catch (error) {
+      if (mode === "register" && applyRegistrationError(error)) {
+        return
+      }
+
+      const message = error instanceof AuthApiError ? error.message : "No se pudo completar la operación."
+      setServerMessage(message)
+    } finally {
       setLoading(false)
-      onLogin()
-    }, 1200)
+    }
   }
 
   const field = (
     key: keyof typeof form,
     label: string,
     type: string,
-    icon: React.ReactNode,
-    extra?: React.ReactNode,
+    icon: ReactNode,
+    extra?: ReactNode,
   ) => (
     <div className="space-y-1.5">
       <label className="text-sm font-medium text-foreground" htmlFor={key}>
@@ -59,16 +161,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           onChange={(e) => {
             setForm((f) => ({ ...f, [key]: e.target.value }))
             setErrors((er) => ({ ...er, [key]: "" }))
+            setServerMessage(null)
           }}
-          placeholder={
-            key === "name"
-              ? "Juan Perez"
-              : key === "email"
-                ? "correo@ejemplo.com"
-                : key === "password"
-                  ? "••••••••"
-                  : "••••••••"
-          }
+          placeholder={getPlaceholder(key)}
           className={cn(
             "w-full pl-10 pr-10 py-3 rounded-xl border bg-background text-foreground text-sm outline-none transition-all",
             "focus:ring-2 focus:ring-[#0038A8]/40 focus:border-[#0038A8]",
@@ -87,9 +182,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
   return (
     <div className="min-h-screen flex bg-muted/30">
-      {/* Left panel — decorative (desktop only) */}
       <div className="hidden lg:flex lg:w-1/2 bg-[#0038A8] relative overflow-hidden flex-col items-center justify-center p-12">
-        {/* Diagonal red stripe */}
         <div className="absolute -top-20 -right-20 w-80 h-80 bg-[#CE1126] rounded-full opacity-20" />
         <div className="absolute -bottom-32 -left-16 w-96 h-96 bg-[#CE1126] rounded-full opacity-15" />
         <div className="absolute top-0 left-0 w-full h-2 flex">
@@ -99,7 +192,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         </div>
 
         <div className="relative z-10 text-center space-y-8 max-w-sm">
-          {/* Shield logo */}
           <div className="flex justify-center">
             <div className="w-24 h-24 rounded-3xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center shadow-2xl">
               <Shield className="w-12 h-12 text-white" />
@@ -113,7 +205,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             </p>
           </div>
 
-          {/* Feature pills */}
           <div className="space-y-3 text-left">
             {[
               "Modulo de Capacitacion interactiva",
@@ -128,7 +219,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             ))}
           </div>
 
-          {/* Flag */}
           <div className="flex items-center justify-center gap-2.5 pt-2">
             <ParaguayFlag className="w-8 h-5 rounded shadow" />
             <span className="text-white/70 text-sm">Hecho en Paraguay</span>
@@ -142,9 +232,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         </div>
       </div>
 
-      {/* Right panel — form */}
       <div className="flex-1 flex flex-col min-h-screen">
-        {/* Top flag stripe (mobile) */}
         <div className="lg:hidden flex w-full h-1.5">
           <div className="flex-1 bg-[#CE1126]" />
           <div className="flex-1 bg-white" />
@@ -153,7 +241,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="w-full max-w-md">
-            {/* Mobile logo */}
             <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#CE1126] via-white to-[#0038A8] p-0.5 shadow-lg">
                 <div className="w-full h-full rounded-xl bg-card flex items-center justify-center">
@@ -166,13 +253,16 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               </div>
             </div>
 
-            {/* Card */}
             <div className="bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
-              {/* Card top stripe */}
               <ParaguayFlagBanner />
 
               <div className="p-8 space-y-6">
-                {/* Heading */}
+                {serverMessage && (
+                  <div className="rounded-xl border border-[#0038A8]/20 bg-[#0038A8]/5 px-4 py-3 text-sm text-[#0038A8]">
+                    {serverMessage}
+                  </div>
+                )}
+
                 <div className="space-y-1">
                   <h2 className="text-2xl font-bold text-foreground">
                     {mode === "login" ? "Bienvenido de vuelta" : "Crear cuenta"}
@@ -184,12 +274,16 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   </p>
                 </div>
 
-                {/* Mode toggle */}
                 <div className="flex bg-muted rounded-xl p-1">
                   {(["login", "register"] as const).map((m) => (
                     <button
                       key={m}
-                      onClick={() => { setMode(m); setErrors({}) }}
+                      type="button"
+                      onClick={() => {
+                        setMode(m)
+                        setErrors({})
+                        setServerMessage(null)
+                      }}
                       className={cn(
                         "flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200",
                         mode === m
@@ -202,11 +296,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   ))}
                 </div>
 
-                {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-                  {mode === "register" &&
-                    field("name", "Nombre completo", "text", <UserPlus className="w-4 h-4" />)}
-                  {field("email", "Correo electronico", "email", <Mail className="w-4 h-4" />)}
+                  {field("username", "Nombre de usuario", "text", <UserPlus className="w-4 h-4" />)}
+                  {mode === "register" && field("email", "Correo electronico (opcional)", "email", <Mail className="w-4 h-4" />)}
                   {field(
                     "password",
                     "Contrasena",
@@ -254,32 +346,11 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                     )}
                   </button>
                 </form>
-
-                {/* Divider */}
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-px bg-border" />
-                  <span className="text-xs text-muted-foreground">o</span>
-                  <div className="flex-1 h-px bg-border" />
-                </div>
-
-                {/* Demo access */}
-                <button
-                  onClick={onLogin}
-                  className={cn(
-                    "w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-semibold text-sm transition-all duration-200",
-                    "border-2 border-[#CE1126] text-[#CE1126] hover:bg-[#CE1126] hover:text-white active:scale-[0.98]",
-                  )}
-                >
-                  <Shield className="w-4 h-4" />
-                  Acceder como Invitado
-                </button>
               </div>
 
-              {/* Card bottom stripe */}
               <ParaguayFlagBanner />
             </div>
 
-            {/* Footer */}
             <div className="mt-6 flex items-center justify-center gap-2">
               <ParaguayFlag className="w-6 h-4 rounded-sm shadow-sm" />
               <p className="text-xs text-muted-foreground">TRECK — Plataforma educativa paraguaya</p>
@@ -287,7 +358,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           </div>
         </div>
 
-        {/* Bottom flag stripe (mobile) */}
         <div className="lg:hidden flex w-full h-1.5">
           <div className="flex-1 bg-[#CE1126]" />
           <div className="flex-1 bg-white" />
