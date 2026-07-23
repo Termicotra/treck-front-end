@@ -16,7 +16,7 @@ interface ProfileModuleProps {
 }
 
 export function ProfileModule({ user, onUpdateUser }: ProfileModuleProps) {
-  const [profileForm, setProfileForm] = useState({ name: user.name, email: user.email })
+  const [profileForm, setProfileForm] = useState({ name: user.name ?? "", email: user.email ?? "" })
   const [profileErrors, setProfileErrors] = useState<Record<string, string>>({})
   const [profileSuccess, setProfileSuccess] = useState(false)
   const [profileLoading, setProfileLoading] = useState(false)
@@ -73,9 +73,10 @@ export function ProfileModule({ user, onUpdateUser }: ProfileModuleProps) {
     }, 1000)
   }
 
-  const initials = profileForm.name
+  const initials = (profileForm.name || "")
     .split(" ")
     .map((n) => n[0])
+    .filter(Boolean)
     .join("")
     .slice(0, 2)
     .toUpperCase()
