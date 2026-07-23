@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, BookOpen, Target, HelpCircle, BarChart3, Shield, Menu, X } from "lucide-react"
+import { Home, BookOpen, Target, HelpCircle, BarChart3, Shield, Menu, X, UserCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ParaguayFlag } from "@/components/paraguay-flag"
 import type { ActiveModule } from "@/app/page"
@@ -9,6 +9,7 @@ import { useState } from "react"
 interface WebHeaderProps {
   activeModule: ActiveModule
   onNavigate: (module: ActiveModule) => void
+  userName?: string
 }
 
 const navItems = [
@@ -17,9 +18,10 @@ const navItems = [
   { id: "simulation" as const, icon: Target, label: "Practica", color: "bg-[#0038A8]" },
   { id: "quiz" as const, icon: HelpCircle, label: "Evaluar", color: "bg-[#CE1126]" },
   { id: "progress" as const, icon: BarChart3, label: "Progreso", color: "bg-[#0038A8]" },
+  { id: "profile" as const, icon: UserCircle, label: "Mi Perfil", color: "bg-[#CE1126]" },
 ]
 
-export function WebHeader({ activeModule, onNavigate }: WebHeaderProps) {
+export function WebHeader({ activeModule, onNavigate, userName = "Usuario" }: WebHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (

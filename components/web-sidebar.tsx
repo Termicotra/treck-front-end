@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, BookOpen, Target, HelpCircle, BarChart3, Shield, ChevronLeft, ChevronRight } from "lucide-react"
+import { Home, BookOpen, Target, HelpCircle, BarChart3, Shield, ChevronLeft, ChevronRight, UserCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ParaguayFlag, ParaguayFlagBanner } from "@/components/paraguay-flag"
 import type { ActiveModule } from "@/app/page"
@@ -9,6 +9,7 @@ import { useState } from "react"
 interface WebSidebarProps {
   activeModule: ActiveModule
   onNavigate: (module: ActiveModule) => void
+  userName?: string
 }
 
 const navItems = [
@@ -19,8 +20,15 @@ const navItems = [
   { id: "progress" as const, icon: BarChart3, label: "Progreso", color: "bg-[#0038A8]" },
 ]
 
-export function WebSidebar({ activeModule, onNavigate }: WebSidebarProps) {
+export function WebSidebar({ activeModule, onNavigate, userName = "Usuario" }: WebSidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
+
+  const initials = userName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()
 
   return (
     <aside
@@ -74,6 +82,28 @@ export function WebSidebar({ activeModule, onNavigate }: WebSidebarProps) {
           )
         })}
       </nav>
+
+      {/* Profile button */}
+      <div className="px-3 pb-2">
+        <button
+          onClick={() => onNavigate("profile")}
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200",
+            activeModule === "profile"
+              ? "bg-[#0038A8] text-white shadow-lg"
+              : "text-muted-foreground hover:bg-accent hover:text-foreground",
+            collapsed && "justify-center px-0",
+          )}
+        >
+          <div className={cn(
+            "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0",
+            activeModule === "profile" ? "bg-white text-[#0038A8]" : "bg-[#0038A8] text-white",
+          )}>
+            {initials || <UserCircle className="w-5 h-5" />}
+          </div>
+          {!collapsed && <span className="text-sm font-medium truncate">{userName}</span>}
+        </button>
+      </div>
 
       {/* Footer */}
       <div className="p-4 border-t border-border space-y-3">

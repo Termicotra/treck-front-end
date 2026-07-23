@@ -9,15 +9,29 @@ import { SimulationModule } from "@/components/simulation-module"
 import { QuizModule } from "@/components/quiz-module"
 import { ProgressModule } from "@/components/progress-module"
 import { LoginScreen } from "@/components/login-screen"
+import { ProfileModule } from "@/components/profile-module"
 
-export type ActiveModule = "dashboard" | "training" | "simulation" | "quiz" | "progress"
+export type ActiveModule = "dashboard" | "training" | "simulation" | "quiz" | "progress" | "profile"
+
+interface UserData {
+  name: string
+  email: string
+}
 
 export default function Home() {
   const [loggedIn, setLoggedIn] = useState(false)
   const [activeModule, setActiveModule] = useState<ActiveModule>("dashboard")
+  const [user, setUser] = useState<UserData>({ name: "Juan Pérez", email: "juan@ejemplo.com" })
 
   if (!loggedIn) {
-    return <LoginScreen onLogin={() => setLoggedIn(true)} />
+    return (
+      <LoginScreen
+        onLogin={(userData?: UserData) => {
+          if (userData) setUser(userData)
+          setLoggedIn(true)
+        }}
+      />
+    )
   }
 
   const renderModule = () => {
@@ -32,6 +46,8 @@ export default function Home() {
         return <QuizModule onBack={() => setActiveModule("dashboard")} />
       case "progress":
         return <ProgressModule onBack={() => setActiveModule("dashboard")} />
+      case "profile":
+        return <ProfileModule user={user} onUpdateUser={setUser} />
       default:
         return <Dashboard onNavigate={setActiveModule} />
     }
@@ -40,12 +56,12 @@ export default function Home() {
   return (
     <div className="flex min-h-screen bg-muted/30">
       {/* Desktop Sidebar */}
-      <WebSidebar activeModule={activeModule} onNavigate={setActiveModule} />
+      <WebSidebar activeModule={activeModule} onNavigate={setActiveModule} userName={user.name} />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Mobile Header */}
-        <WebHeader activeModule={activeModule} onNavigate={setActiveModule} />
+        <WebHeader activeModule={activeModule} onNavigate={setActiveModule} userName={user.name} />
 
         {/* Page Content */}
         <main className="flex-1">
