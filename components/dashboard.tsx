@@ -5,12 +5,14 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { ParaguayFlag, ParaguayFlagBanner } from "@/components/paraguay-flag"
 import type { ActiveModule } from "@/app/page"
+import type { AuthSession } from "@/lib/auth"
 
 interface DashboardProps {
   onNavigate: (module: ActiveModule) => void
+  session: AuthSession | null
 }
 
-export function Dashboard({ onNavigate }: DashboardProps) {
+export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
   const userProgress = 35
   const completedModules = 2
   const totalModules = 6
@@ -69,7 +71,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             </p>
           </div>
         </div>
-        <ParaguayFlag className="w-16 h-10 md:w-20 md:h-12 rounded-md shadow-md" />
+        <ParaguayFlag className="w-16 h-10 md:w-20 md:h-12 rounded-md shadow-md self-start md:self-auto" />
       </div>
 
       <ParaguayFlagBanner />
@@ -241,7 +243,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       <div className="pt-4 pb-6 flex flex-col items-center gap-3">
         <ParaguayFlagBanner />
         <p className="text-sm text-muted-foreground flex items-center gap-2">
-          Hecho con orgullo en
+          <span>Hecho con orgullo en</span>
           <span className="font-semibold text-foreground">Paraguay</span>
           <ParaguayFlag className="w-6 h-4 rounded-sm" />
         </p>

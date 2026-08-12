@@ -8,6 +8,12 @@ export type AuthSession = {
   user: Record<string, unknown> | null
 }
 
+export type AuthUserProfile = {
+  username: string | null
+  name: string | null
+  email: string | null
+}
+
 export type LoginPayload = {
   username: string
   password: string
@@ -39,8 +45,13 @@ export class AuthApiError extends Error {
 }
 
 const STORAGE_KEY = "treck-auth-session"
+const LOGOUT_KEY = "treck-auth-logout"
 const DEFAULT_API_BASE_URL = "http://localhost:8000"
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL).replace(/\/$/, "")
+
+export function getApiUrl(path: string) {
+  return `${API_BASE_URL}${path}`
+}
 
 function buildUrl(path: string) {
   return `${API_BASE_URL}${path}`
@@ -103,6 +114,32 @@ function extractUser(payload: unknown): Record<string, unknown> | null {
   return null
 }
 
+export function getAuthUserProfile(session: AuthSession | null): AuthUserProfile {
+  const user = session?.user
+  if (!isRecord(user)) {
+    return { username: null, name: null, email: null }
+  }
+
+  const username =
+    pickString(user.username) ??
+    pickString(user.user_name) ??
+    pickString(user.handle) ??
+    null
+  const name =
+    pickString(user.name) ??
+    pickString(user.full_name) ??
+    pickString(user.first_name) ??
+    null
+  const email = pickString(user.email) ?? null
+
+  return { username, name, email }
+}
+
+export function getAuthDisplayName(session: AuthSession | null) {
+  const profile = getAuthUserProfile(session)
+  return profile.name ?? profile.username ?? profile.email ?? "Usuario"
+}
+
 async function requestJson<T>(path: string, init?: RequestInit, extraHeaders?: HeadersInit): Promise<T> {
   const headers = new Headers(init?.headers)
   const requestHeaders = new Headers(extraHeaders)
@@ -142,12 +179,15 @@ export function saveAuthSession(session: AuthSession) {
   const storage = getWindowStorage()
   if (!storage) return
 
+  storage.removeItem(LOGOUT_KEY)
   storage.setItem(STORAGE_KEY, JSON.stringify(session))
 }
 
 export function loadAuthSession(): AuthSession | null {
   const storage = getWindowStorage()
   if (!storage) return null
+
+  if (storage.getItem(LOGOUT_KEY)) return null
 
   const raw = storage.getItem(STORAGE_KEY)
   if (!raw) return null
@@ -173,6 +213,7 @@ export function clearAuthSession() {
   if (!storage) return
 
   storage.removeItem(STORAGE_KEY)
+  storage.setItem(LOGOUT_KEY, Date.now().toString())
 }
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {

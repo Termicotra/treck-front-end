@@ -1,105 +1,221 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ArrowLeft, Target, Mail, MessageSquare, AlertTriangle, CheckCircle, XCircle, RefreshCw, ShieldAlert, ShieldCheck } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ParaguayFlagBanner } from "@/components/paraguay-flag"
 import { cn } from "@/lib/utils"
+import { getApiUrl, loadAuthSession } from "@/lib/auth"
 
 interface SimulationModuleProps {
   onBack: () => void
 }
 
-interface SimulationItem {
+interface SimulationApiItem {
   id: number
-  type: "email" | "sms"
-  isPhishing: boolean
-  from: string
+  usuario: string | null
+  articulo: number | null
+  articulo_titulo: string | null
+  articulo_url: string | null
+  es_phishing: boolean
+  simulacion_texto: string
+  tipo_mensaje: string | null
+  sender_email: string | null
   subject?: string
-  preview: string
-  fullContent: string
-  redFlags: string[]
-  explanation: string
+  attachments: string[] | null
+  enlace_senuelo: string | null
+  entidad_objetivo: string | null
+  dominio_objetivo: string | null
+  resumen_justificacion: string | null
+  resultado: string | null
+  feedback: string | null
+  tipo_generacion: string | null
+  fecha_creacion: string | null
+  fecha_respuesta: string | null
+  es_mostrada: boolean
 }
 
-const simulations: SimulationItem[] = [
-  {
-    id: 1,
-    type: "email",
-    isPhishing: true,
-    from: "seguridad@banc0-nacional.py",
-    subject: "URGENTE: Su cuenta sera bloqueada",
-    preview: "Estimado cliente, hemos detectado actividad sospechosa...",
-    fullContent:
-      "Estimado cliente,\n\nHemos detectado actividad sospechosa en su cuenta. Para evitar el bloqueo permanente, debe verificar sus datos inmediatamente haciendo clic en el siguiente enlace:\n\nhttp://banconacional-verificar.tk/login\n\nTiene 24 horas para completar la verificacion.\n\nAtentamente,\nEquipo de Seguridad",
-    redFlags: [
-      "Dominio sospechoso: 'banc0-nacional' (con numero 0)",
-      "URL con extension .tk (no oficial)",
-      "Urgencia extrema ('24 horas')",
-      "No menciona tu nombre real",
-    ],
-    explanation:
-      "Este es un tipico correo de phishing. Los bancos legitimos nunca solicitan datos por correo ni usan dominios extranos.",
-  },
-  {
-    id: 2,
-    type: "sms",
-    isPhishing: true,
-    from: "+595 971 *** ***",
-    preview: "TIGO: Ganaste Gs. 5.000.000! Reclama tu premio en...",
-    fullContent:
-      "TIGO: Felicitaciones! Ganaste Gs. 5.000.000 en nuestro sorteo mensual. Para reclamar tu premio ingresa a: bit.ly/tigo-premio-py y completa tus datos bancarios. Valido por 48hs.",
-    redFlags: [
-      "Numero desconocido, no oficial de Tigo",
-      "Premio no solicitado",
-      "URL acortada (bit.ly)",
-      "Solicita datos bancarios",
-      "Urgencia artificial",
-    ],
-    explanation: "Las empresas de telefonia no regalan premios por SMS ni solicitan datos bancarios por este medio.",
-  },
-  {
-    id: 3,
-    type: "email",
-    isPhishing: false,
-    from: "notificaciones@personal.com.py",
-    subject: "Tu factura de diciembre esta disponible",
-    preview: "Hola Juan, tu factura del mes de diciembre ya esta...",
-    fullContent:
-      "Hola Juan Perez,\n\nTu factura del mes de diciembre ya esta disponible para consulta en nuestra app Mi Personal o en personal.com.py/mi-cuenta.\n\nMonto: Gs. 185.000\nVencimiento: 15/01/2026\n\nPodes pagar en cualquier punto autorizado o a traves de nuestra app.\n\nGracias por elegirnos.\nPersonal Paraguay",
-    redFlags: [],
-    explanation:
-      "Este es un correo legitimo. Usa el dominio oficial, menciona tu nombre, no solicita datos sensibles y te dirige al sitio oficial.",
-  },
-  {
-    id: 4,
-    type: "sms",
-    isPhishing: true,
-    from: "+595 985 *** ***",
-    preview: "BCP: Se detecto un cobro de USD 890. Si no reconoces...",
-    fullContent:
-      "BCP: Se detecto un cobro de USD 890.00 en su tarjeta. Si no reconoces esta transaccion, cancelala aqui: bcp-seguridad.net/cancelar. Responde STOP si no deseas recibir alertas.",
-    redFlags: [
-      "Numero personal, no linea oficial",
-      "Dominio falso: 'bcp-seguridad.net'",
-      "El BCP no envia estos mensajes",
-      "Genera panico con cobro falso",
-    ],
-    explanation:
-      "Los bancos nunca envian enlaces por SMS para cancelar transacciones. Siempre llama directamente al banco.",
-  },
-]
+type DisplaySimulation = {
+  id: number
+  articleId: number | null
+  type: "email" | "whatsapp"
+  isPhishing: boolean
+  body: string
+  senderEmail: string | null
+  subject: string | null
+  attachments: string[]
+  lureLink: string | null
+  targetEntity: string | null
+  targetDomain: string | null
+  articleTitle: string | null
+  articleUrl: string | null
+  explanation: string
+  feedback: string
+  result: string | null
+  isShown: boolean
+  createdAt: string | null
+}
 
-export function SimulationModule({ onBack }: SimulationModuleProps) {
+const SIMULATIONS_ENDPOINT = getApiUrl("/api/simulaciones/")
+
+function normalizeSimulation(item: SimulationApiItem): DisplaySimulation {
+  const type = item.tipo_mensaje?.toLowerCase() === "whatsapp" ? "whatsapp" : "email"
+  const attachments = Array.isArray(item.attachments) ? item.attachments.filter((attachment) => typeof attachment === "string") : []
+
+  return {
+    id: item.id,
+    articleId: item.articulo,
+    type,
+    isPhishing: item.es_phishing,
+    body: item.simulacion_texto,
+    senderEmail: item.sender_email,
+    subject: item.subject ?? null,
+    attachments,
+    lureLink: item.enlace_senuelo,
+    targetEntity: item.entidad_objetivo,
+    targetDomain: item.dominio_objetivo,
+    articleTitle: item.articulo_titulo,
+    articleUrl: item.articulo_url,
+    explanation: item.resumen_justificacion ?? "Sin justificacion disponible.",
+    feedback: item.feedback ?? "Sin feedback disponible.",
+    result: item.resultado,
+    isShown: item.es_mostrada,
+    createdAt: item.fecha_creacion,
+  }
+}
+
+function sortNewestFirst(items: DisplaySimulation[]) {
+  return [...items].sort((left, right) => {
+    const leftTime = left.createdAt ? Date.parse(left.createdAt) : 0
+    const rightTime = right.createdAt ? Date.parse(right.createdAt) : 0
+    return rightTime - leftTime
+  })
+}
+
+function sortNewestFirstApi(items: SimulationApiItem[]) {
+  return [...items].sort((left, right) => {
+    const leftTime = left.fecha_creacion ? Date.parse(left.fecha_creacion) : 0
+    const rightTime = right.fecha_creacion ? Date.parse(right.fecha_creacion) : 0
+    return rightTime - leftTime
+  })
+}
+
+function shuffleItems<T>(items: T[]) {
+  const shuffled = [...items]
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const randomIndex = getRandomIndex(index + 1)
+    ;[shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]]
+  }
+
+  return shuffled
+}
+
+function getRandomIndex(maxExclusive: number) {
+  if (maxExclusive <= 1) return 0
+
+  const randomValues = new Uint32Array(1)
+  crypto.getRandomValues(randomValues)
+  return randomValues[0] % maxExclusive
+}
+
+function pickRecentUniqueSimulations(items: SimulationApiItem[]) {
+  const recentItems = sortNewestFirstApi(items).slice(0, 20)
+  const groupedItems = new Map<string, SimulationApiItem[]>()
+
+  for (const item of recentItems) {
+    const groupKey = item.articulo != null ? `article:${item.articulo}` : `item:${item.id}`
+    const group = groupedItems.get(groupKey) ?? []
+    group.push(item)
+    groupedItems.set(groupKey, group)
+  }
+
+  return shuffleItems(
+    Array.from(groupedItems.values()).map((group) => {
+      if (group.length === 1) return group[0]
+
+      const randomIndex = getRandomIndex(group.length)
+      return group[randomIndex]
+    }),
+  )
+}
+
+function getProgressDotClass(index: number, currentIndex: number) {
+  if (index < currentIndex) return "bg-white"
+  if (index === currentIndex) return "bg-white/80"
+  return "bg-white/30"
+}
+
+export function SimulationModule({ onBack }: Readonly<SimulationModuleProps>) {
+  const [simulations, setSimulations] = useState<DisplaySimulation[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null)
   const [showResult, setShowResult] = useState(false)
   const [score, setScore] = useState({ correct: 0, total: 0 })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const current = simulations[currentIndex]
+  useEffect(() => {
+    let active = true
+
+    const loadSimulations = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const session = loadAuthSession()
+        const headers: HeadersInit = {}
+
+        if (session?.tokens.access) {
+          headers.Authorization = `Bearer ${session.tokens.access}`
+        }
+
+        const response = await fetch(SIMULATIONS_ENDPOINT, {
+          headers,
+          cache: "no-store",
+        })
+
+        if (!response.ok) {
+          throw new Error("No se pudieron cargar las simulaciones.")
+        }
+
+        const payload = (await response.json()) as SimulationApiItem[] | { results?: SimulationApiItem[] }
+        const items = Array.isArray(payload) ? payload : payload.results ?? []
+
+        if (!active) return
+
+        const selectedItems = pickRecentUniqueSimulations(items)
+        setSimulations(selectedItems.map(normalizeSimulation))
+        setCurrentIndex(0)
+      } catch (loadError) {
+        if (!active) return
+        setError(loadError instanceof Error ? loadError.message : "No se pudieron cargar las simulaciones.")
+        setSimulations([])
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+
+    void loadSimulations()
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const current = simulations[currentIndex] ?? null
+
+  const currentFeedback = useMemo(() => {
+    if (!current) return ""
+
+    const parts = [current.explanation, current.feedback].filter(Boolean)
+    return parts.join(" ")
+  }, [current])
 
   const handleAnswer = (answer: boolean) => {
+    if (!current) return
+
     setSelectedAnswer(answer)
     setShowResult(true)
 
@@ -125,7 +241,45 @@ export function SimulationModule({ onBack }: SimulationModuleProps) {
     setScore({ correct: 0, total: 0 })
   }
 
-  const isCorrect = selectedAnswer === current.isPhishing
+  const isCorrect = current ? selectedAnswer === current.isPhishing : false
+  const showNextExample = currentIndex < simulations.length - 1
+
+  if (loading) {
+    return (
+      <div className="min-h-full flex items-center justify-center p-6 text-sm text-muted-foreground">
+        Cargando simulaciones...
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-full flex items-center justify-center p-6">
+        <Card className="w-full max-w-xl border-[#CE1126]/30 bg-[#CE1126]/5">
+          <CardContent className="p-6 space-y-3 text-center">
+            <h2 className="text-lg font-bold text-foreground">No se pudieron cargar las simulaciones</h2>
+            <p className="text-sm text-muted-foreground">{error}</p>
+            <Button className="bg-[#0038A8] hover:bg-[#0038A8]/90 text-white" onClick={() => window.location.reload()}>
+              Reintentar
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (!current) {
+    return (
+      <div className="min-h-full flex items-center justify-center p-6">
+        <Card className="w-full max-w-xl">
+          <CardContent className="p-6 space-y-3 text-center">
+            <h2 className="text-lg font-bold text-foreground">No hay simulaciones disponibles</h2>
+            <p className="text-sm text-muted-foreground">El frontend solo muestra las 20 simulaciones mas recientes.</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-full">
@@ -154,7 +308,7 @@ export function SimulationModule({ onBack }: SimulationModuleProps) {
 
           <div className="mt-4 flex items-center justify-between">
             <span className="text-sm opacity-80">
-              Ejemplo {currentIndex + 1} de {simulations.length}
+              Simulacion {currentIndex + 1} de {simulations.length}
             </span>
             <span className="text-sm font-semibold md:hidden">
               Aciertos: {score.correct}/{score.total}
@@ -163,13 +317,10 @@ export function SimulationModule({ onBack }: SimulationModuleProps) {
 
           {/* Progress dots */}
           <div className="flex gap-2 mt-3">
-            {simulations.map((_, idx) => (
+            {simulations.map((simulation, idx) => (
               <div
-                key={idx}
-                className={cn(
-                  "h-1.5 rounded-full flex-1 transition-all",
-                  idx < currentIndex ? "bg-white" : idx === currentIndex ? "bg-white/80" : "bg-white/30",
-                )}
+                key={simulation.id}
+                className={cn("h-1.5 rounded-full flex-1 transition-all", getProgressDotClass(idx, currentIndex))}
               />
             ))}
           </div>
@@ -196,23 +347,39 @@ export function SimulationModule({ onBack }: SimulationModuleProps) {
                     <MessageSquare className="w-5 h-5 text-[#0038A8]" />
                   )}
                   <span className="text-xs text-muted-foreground uppercase font-medium tracking-wider">
-                    {current.type === "email" ? "Correo Electronico" : "Mensaje SMS"}
+                    {current.type === "email" ? "Correo Electronico" : "Mensaje WhatsApp"}
                   </span>
                 </div>
 
                 <div className="space-y-1.5">
-                  <p className="text-sm text-muted-foreground">
-                    De: <span className="text-foreground font-mono text-xs bg-muted px-2 py-0.5 rounded">{current.from}</span>
-                  </p>
-                  {current.subject && (
+                  {current.type === "email" && current.senderEmail && (
+                    <p className="text-sm text-muted-foreground">
+                      De: <span className="text-foreground font-mono text-xs bg-muted px-2 py-0.5 rounded">{current.senderEmail}</span>
+                    </p>
+                  )}
+                  {current.type === "email" && current.subject && (
                     <p className="text-sm text-muted-foreground">
                       Asunto: <span className="text-foreground font-semibold">{current.subject}</span>
+                    </p>
+                  )}
+                  {current.type === "whatsapp" && (
+                    <p className="text-sm text-muted-foreground">
+                      Canal: <span className="text-foreground font-semibold">WhatsApp</span>
                     </p>
                   )}
                 </div>
 
                 <div className="bg-muted/50 rounded-xl p-4 md:p-5">
-                  <p className="text-sm whitespace-pre-line leading-relaxed">{current.fullContent}</p>
+                  <p className="text-sm whitespace-pre-line leading-relaxed">{current.body}</p>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  {current.attachments.length > 0 && (
+                    <div className="rounded-xl border border-border bg-background p-4">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Adjuntos</p>
+                      <p className="mt-1 text-sm font-semibold text-foreground">{current.attachments.join(", ")}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -288,25 +455,41 @@ export function SimulationModule({ onBack }: SimulationModuleProps) {
                     <p className="font-semibold text-foreground">
                       Este mensaje {current.isPhishing ? "SI es phishing" : "es legitimo"}.
                     </p>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{current.explanation}</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{currentFeedback}</p>
                   </div>
 
-                  {current.redFlags.length > 0 && (
-                    <div className="space-y-2 bg-warning/10 rounded-xl p-4">
-                      <p className="text-sm font-semibold text-foreground">Senales de alerta:</p>
-                      <ul className="space-y-2">
-                        {current.redFlags.map((flag, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                            <AlertTriangle className="w-4 h-4 text-[#CE1126] mt-0.5 flex-shrink-0" />
-                            <span>{flag}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  <div className="space-y-2 bg-warning/10 rounded-xl p-4">
+                    <p className="text-sm font-semibold text-foreground">Datos para feedback:</p>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      {current.targetEntity && (
+                        <li className="flex items-start gap-2">
+                          <AlertTriangle className="w-4 h-4 text-[#CE1126] mt-0.5 flex-shrink-0" />
+                          <span>Entidad objetivo: {current.targetEntity}</span>
+                        </li>
+                      )}
+                      {current.targetDomain && (
+                        <li className="flex items-start gap-2">
+                          <AlertTriangle className="w-4 h-4 text-[#CE1126] mt-0.5 flex-shrink-0" />
+                          <span>Dominio objetivo: {current.targetDomain}</span>
+                        </li>
+                      )}
+                      {current.articleTitle && (
+                        <li className="flex items-start gap-2">
+                          <AlertTriangle className="w-4 h-4 text-[#CE1126] mt-0.5 flex-shrink-0" />
+                          <span>Articulo: {current.articleTitle}</span>
+                        </li>
+                      )}
+                      {current.articleUrl && (
+                        <li className="flex items-start gap-2">
+                          <AlertTriangle className="w-4 h-4 text-[#CE1126] mt-0.5 flex-shrink-0" />
+                          <span className="break-all">Fuente: {current.articleUrl}</span>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
 
                   <div className="pt-2">
-                    {currentIndex < simulations.length - 1 ? (
+                    {showNextExample ? (
                       <Button className="w-full bg-[#0038A8] hover:bg-[#0038A8]/90 text-white" onClick={handleNext}>
                         Siguiente ejemplo
                       </Button>

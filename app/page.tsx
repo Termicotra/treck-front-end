@@ -9,13 +9,15 @@ import { TrainingModule } from "@/components/training-module"
 import { SimulationModule } from "@/components/simulation-module"
 import { QuizModule } from "@/components/quiz-module"
 import { ProgressModule } from "@/components/progress-module"
-import { bootstrapAuthSession } from "@/lib/auth"
+import { ProfileModule } from "@/components/profile-module"
+import { bootstrapAuthSession, getAuthDisplayName, type AuthSession } from "@/lib/auth"
 
-export type ActiveModule = "dashboard" | "training" | "simulation" | "quiz" | "progress"
+export type ActiveModule = "dashboard" | "training" | "simulation" | "quiz" | "progress" | "profile"
 
 export default function Home() {
   const router = useRouter()
   const [authReady, setAuthReady] = useState(false)
+  const [session, setSession] = useState<AuthSession | null>(null)
   const [activeModule, setActiveModule] = useState<ActiveModule>("dashboard")
 
   useEffect(() => {
@@ -30,6 +32,7 @@ export default function Home() {
           return
         }
 
+        setSession(session)
         setAuthReady(true)
       })
       .catch(() => {
@@ -52,7 +55,7 @@ export default function Home() {
   const renderModule = () => {
     switch (activeModule) {
       case "dashboard":
-        return <Dashboard onNavigate={setActiveModule} />
+        return <Dashboard onNavigate={setActiveModule} session={session} />
       case "training":
         return <TrainingModule onBack={() => setActiveModule("dashboard")} />
       case "simulation":
@@ -61,20 +64,30 @@ export default function Home() {
         return <QuizModule onBack={() => setActiveModule("dashboard")} />
       case "progress":
         return <ProgressModule onBack={() => setActiveModule("dashboard")} />
+      case "profile":
+        return <ProfileModule session={session} />
       default:
-        return <Dashboard onNavigate={setActiveModule} />
+        return <Dashboard onNavigate={setActiveModule} session={session} />
     }
   }
 
   return (
     <div className="flex min-h-screen bg-muted/30">
       {/* Desktop Sidebar */}
-      <WebSidebar activeModule={activeModule} onNavigate={setActiveModule} />
+      <WebSidebar
+        activeModule={activeModule}
+        onNavigate={setActiveModule}
+        userName={getAuthDisplayName(session)}
+      />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Mobile Header */}
-        <WebHeader activeModule={activeModule} onNavigate={setActiveModule} />
+        <WebHeader
+          activeModule={activeModule}
+          onNavigate={setActiveModule}
+          userName={getAuthDisplayName(session)}
+        />
 
         {/* Page Content */}
         <main className="flex-1">
