@@ -1,58 +1,109 @@
 "use client"
 
-import { ArrowLeft, BarChart3, Award, Target, BookOpen, TrendingUp, Calendar, Clock, Shield, FileText } from "lucide-react"
+import { useEffect, useState } from "react"
+import { ArrowLeft, BarChart3, Award, Target, BookOpen, TrendingUp, Calendar, Clock, Shield, FileText, AlertCircle } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { ParaguayFlag, ParaguayFlagBanner } from "@/components/paraguay-flag"
+import { obtenerEstadisticasProgreso, EstadisticasProgreso } from "@/lib/progreso"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface ProgressModuleProps {
   onBack: () => void
 }
 
 export function ProgressModule({ onBack }: ProgressModuleProps) {
-  const stats = {
-    totalLessons: 6,
-    completedLessons: 2,
-    totalSimulations: 10,
-    completedSimulations: 4,
-    totalQuizzes: 3,
-    completedQuizzes: 1,
-    averageScore: 75,
-    streak: 3,
-    lastActivity: "Hoy",
-    totalTimeSpent: "45 min",
+  const [stats, setStats] = useState<EstadisticasProgreso | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const cargarEstadisticas = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const data = await obtenerEstadisticasProgreso()
+        setStats(data)
+      } catch (err) {
+        setError("No se pudieron cargar las estadísticas de progreso")
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    cargarEstadisticas()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-full flex items-center justify-center p-6 text-sm text-muted-foreground">
+        Cargando progreso...
+      </div>
+    )
+  }
+
+  if (error || !stats) {
+    return (
+      <div className="min-h-full">
+        <div className="bg-[#0038A8] text-white">
+          <div className="max-w-5xl mx-auto p-4 md:p-8">
+            <button onClick={onBack} className="flex items-center gap-2 text-sm mb-4 opacity-80 hover:opacity-100 transition-opacity md:hidden">
+              <ArrowLeft className="w-4 h-4" />
+              Volver al inicio
+            </button>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
+                  <BarChart3 className="w-7 h-7" />
+                </div>
+                <div>
+                  <h1 className="text-xl md:text-2xl font-bold">Mi Progreso</h1>
+                  <p className="text-sm opacity-80">Seguimiento de tu aprendizaje</p>
+                </div>
+              </div>
+              <ParaguayFlag className="w-10 h-7 rounded-sm shadow hidden md:block" />
+            </div>
+          </div>
+          <div className="flex w-full h-1">
+            <div className="flex-1 bg-[#CE1126]" />
+            <div className="flex-1 bg-white" />
+            <div className="flex-1 bg-[#0038A8]" />
+          </div>
+        </div>
+        <div className="max-w-5xl mx-auto p-4 md:p-8">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error || "No se pudo cargar el progreso"}</AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    )
   }
 
   const moduleProgress = [
     {
       icon: BookOpen,
       title: "Capacitacion",
-      progress: Math.round((stats.completedLessons / stats.totalLessons) * 100),
-      detail: `${stats.completedLessons} de ${stats.totalLessons} lecciones`,
+      progress: stats.capacitaciones.porcentaje,
+      detail: `${stats.capacitaciones.completadas} de ${stats.capacitaciones.total} lecciones`,
       color: "bg-[#0038A8]",
     },
     {
       icon: Target,
       title: "Simulaciones",
-      progress: Math.round((stats.completedSimulations / stats.totalSimulations) * 100),
-      detail: `${stats.completedSimulations} de ${stats.totalSimulations} completadas`,
+      progress: stats.simulaciones.porcentaje,
+      detail: `${stats.simulaciones.correctas} correctas de ${stats.simulaciones.total}`,
       color: "bg-[#CE1126]",
     },
     {
       icon: Award,
       title: "Evaluaciones",
-      progress: Math.round((stats.completedQuizzes / stats.totalQuizzes) * 100),
-      detail: `${stats.completedQuizzes} de ${stats.totalQuizzes} completadas`,
+      progress: stats.evaluaciones.porcentaje,
+      detail: `${stats.evaluaciones.correctas} correctas de ${stats.evaluaciones.total}`,
       color: "bg-[#0038A8]",
     },
   ]
-
-  const overallProgress = Math.round(
-    ((stats.completedLessons / stats.totalLessons) * 0.4 +
-      (stats.completedSimulations / stats.totalSimulations) * 0.3 +
-      (stats.completedQuizzes / stats.totalQuizzes) * 0.3) *
-      100,
-  )
 
   return (
     <div className="min-h-full">
@@ -94,14 +145,14 @@ export function ProgressModule({ onBack }: ProgressModuleProps) {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <p className="text-sm opacity-80">Progreso general</p>
-                  <p className="text-4xl md:text-5xl font-bold mt-1">{overallProgress}%</p>
+                  <p className="text-4xl md:text-5xl font-bold mt-1">{stats.resumen.progresoGeneral}%</p>
                   <p className="text-xs opacity-70 mt-2">Continua asi para convertirte en experto</p>
                 </div>
                 <div className="w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center">
                   <TrendingUp className="w-10 h-10" />
                 </div>
               </div>
-              <Progress value={overallProgress} className="h-3 bg-white/20" />
+              <Progress value={stats.resumen.progresoGeneral} className="h-3 bg-white/20" />
             </CardContent>
           </Card>
 
@@ -113,7 +164,9 @@ export function ProgressModule({ onBack }: ProgressModuleProps) {
                   <Award className="w-6 h-6 text-[#CE1126]" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{stats.averageScore}%</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {stats.evaluaciones.total > 0 ? Math.round((stats.evaluaciones.correctas / stats.evaluaciones.total) * 100) : 0}%
+                  </p>
                   <p className="text-xs text-muted-foreground">Puntaje promedio</p>
                 </div>
               </CardContent>
@@ -124,8 +177,8 @@ export function ProgressModule({ onBack }: ProgressModuleProps) {
                   <Calendar className="w-6 h-6 text-[#0038A8]" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{stats.streak} dias</p>
-                  <p className="text-xs text-muted-foreground">Racha activa</p>
+                  <p className="text-2xl font-bold text-foreground text-base">{stats.resumen.ultimaActividad}</p>
+                  <p className="text-xs text-muted-foreground">Última actividad</p>
                 </div>
               </CardContent>
             </Card>
@@ -139,7 +192,7 @@ export function ProgressModule({ onBack }: ProgressModuleProps) {
               <div className="w-12 h-12 rounded-xl bg-[#0038A8]/10 flex items-center justify-center mx-auto mb-3">
                 <Clock className="w-6 h-6 text-[#0038A8]" />
               </div>
-              <p className="text-2xl font-bold text-foreground">{stats.totalTimeSpent}</p>
+              <p className="text-2xl font-bold text-foreground">{stats.resumen.tiempoTotal}</p>
               <p className="text-xs text-muted-foreground mt-1">Tiempo total</p>
             </CardContent>
           </Card>
@@ -148,7 +201,7 @@ export function ProgressModule({ onBack }: ProgressModuleProps) {
               <div className="w-12 h-12 rounded-xl bg-[#CE1126]/10 flex items-center justify-center mx-auto mb-3">
                 <Target className="w-6 h-6 text-[#CE1126]" />
               </div>
-              <p className="text-2xl font-bold text-foreground">{stats.lastActivity}</p>
+              <p className="text-2xl font-bold text-foreground text-base">{stats.resumen.ultimaActividad}</p>
               <p className="text-xs text-muted-foreground mt-1">Ultima actividad</p>
             </CardContent>
           </Card>
@@ -157,7 +210,7 @@ export function ProgressModule({ onBack }: ProgressModuleProps) {
               <div className="w-12 h-12 rounded-xl bg-[#0038A8]/10 flex items-center justify-center mx-auto mb-3">
                 <BookOpen className="w-6 h-6 text-[#0038A8]" />
               </div>
-              <p className="text-2xl font-bold text-foreground">{stats.completedLessons}</p>
+              <p className="text-2xl font-bold text-foreground">{stats.capacitaciones.completadas}</p>
               <p className="text-xs text-muted-foreground mt-1">Lecciones completadas</p>
             </CardContent>
           </Card>
@@ -166,8 +219,8 @@ export function ProgressModule({ onBack }: ProgressModuleProps) {
               <div className="w-12 h-12 rounded-xl bg-[#CE1126]/10 flex items-center justify-center mx-auto mb-3">
                 <Shield className="w-6 h-6 text-[#CE1126]" />
               </div>
-              <p className="text-2xl font-bold text-foreground">{stats.completedSimulations}</p>
-              <p className="text-xs text-muted-foreground mt-1">Simulaciones hechas</p>
+              <p className="text-2xl font-bold text-foreground">{stats.simulaciones.correctas}</p>
+              <p className="text-xs text-muted-foreground mt-1">Simulaciones correctas</p>
             </CardContent>
           </Card>
         </div>

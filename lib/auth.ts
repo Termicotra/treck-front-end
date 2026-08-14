@@ -208,6 +208,17 @@ export function loadAuthSession(): AuthSession | null {
   }
 }
 
+export function buildAuthHeaders(extraHeaders?: HeadersInit) {
+  const headers = new Headers(extraHeaders)
+  const session = loadAuthSession()
+
+  if (session?.tokens.access) {
+    headers.set("Authorization", `Bearer ${session.tokens.access}`)
+  }
+
+  return headers
+}
+
 export function clearAuthSession() {
   const storage = getWindowStorage()
   if (!storage) return

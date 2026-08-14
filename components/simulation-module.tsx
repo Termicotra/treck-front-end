@@ -6,7 +6,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ParaguayFlagBanner } from "@/components/paraguay-flag"
 import { cn } from "@/lib/utils"
-import { getApiUrl, loadAuthSession } from "@/lib/auth"
+import { buildAuthHeaders, getApiUrl } from "@/lib/auth"
+import { registrarRespuestaSimulacion } from "@/lib/simulaciones"
 
 interface SimulationModuleProps {
   onBack: () => void
@@ -164,15 +165,8 @@ export function SimulationModule({ onBack }: Readonly<SimulationModuleProps>) {
       setError(null)
 
       try {
-        const session = loadAuthSession()
-        const headers: HeadersInit = {}
-
-        if (session?.tokens.access) {
-          headers.Authorization = `Bearer ${session.tokens.access}`
-        }
-
         const response = await fetch(SIMULATIONS_ENDPOINT, {
-          headers,
+          headers: buildAuthHeaders(),
           cache: "no-store",
         })
 
@@ -213,7 +207,7 @@ export function SimulationModule({ onBack }: Readonly<SimulationModuleProps>) {
     return parts.join(" ")
   }, [current])
 
-  const handleAnswer = (answer: boolean) => {
+  const handleAnswer = async (answer: boolean) => {
     if (!current) return
 
     setSelectedAnswer(answer)
@@ -224,6 +218,12 @@ export function SimulationModule({ onBack }: Readonly<SimulationModuleProps>) {
       setScore((prev) => ({ ...prev, correct: prev.correct + 1 }))
     }
     setScore((prev) => ({ ...prev, total: prev.total + 1 }))
+
+    try {
+      await registrarRespuestaSimulacion(current.id, answer ? "phishing" : "no-phishing")
+    } catch (error) {
+      console.error("Error registrando respuesta:", error)
+    }
   }
 
   const handleNext = () => {
