@@ -52,12 +52,15 @@ export function LoginScreen() {
   const validate = () => {
     const next: Record<string, string> = {}
     if (!form.username.trim()) next.username = "Ingresa un nombre de usuario."
-    if (mode === "register" && !form.username.trim()) next.username = "Ingresa un nombre de usuario."
-    if (mode === "register" && form.username.trim().length < 3) next.username = "Mínimo 3 caracteres."
-    if (mode === "register" && form.email.trim() && !isValidEmail(form.email)) next.email = "Correo no válido."
+
+    if (mode === "register") {
+      if (form.username.trim().length < 3) next.username = "Mínimo 3 caracteres."
+      if (form.email.trim() && !isValidEmail(form.email)) next.email = "Correo no válido."
+      if (form.password !== form.confirm) next.confirm = "Las contraseñas no coinciden."
+    }
+
     if (!form.password) next.password = "Ingresa una contraseña."
-    else if (form.password.length < 6) next.password = "Mínimo 6 caracteres."
-    if (mode === "register" && form.password !== form.confirm) next.confirm = "Las contraseñas no coinciden."
+
     setErrors(next)
     return Object.keys(next).length === 0
   }
