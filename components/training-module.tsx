@@ -62,11 +62,9 @@ export function TrainingModule({ onBack }: TrainingModuleProps) {
     try {
       setCompletingLesson(true)
       await marcarLeccionCompletada(selectedLessonId)
-      setLessons((prev) =>
-        prev.map((l) =>
-          l.id === selectedLessonId ? { ...l, completed: true } : l
-        )
-      )
+
+      const updatedLessons = await obtenerLecciones()
+      setLessons(updatedLessons)
       setShowFeedback(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo marcar la leccion como completada.")
