@@ -1,9 +1,11 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Shield, BookOpen, Target, HelpCircle, TrendingUp, Award, AlertTriangle, ChevronRight, Globe, Users, Lock } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { ParaguayFlag, ParaguayFlagBanner } from "@/components/paraguay-flag"
+import { obtenerEstadisticasProgreso, EstadisticasProgreso } from "@/lib/progreso"
 import type { ActiveModule } from "@/app/page"
 import type { AuthSession } from "@/lib/auth"
 
@@ -13,8 +15,29 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
-  const userProgress = 35
-  const completedModules = 2
+  const [stats, setStats] = useState<EstadisticasProgreso | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const cargarEstadisticas = async () => {
+      try {
+        setLoading(true)
+        const data = await obtenerEstadisticasProgreso()
+        setStats(data)
+      } catch (error) {
+        console.error("Error cargando estadísticas:", error)
+        // Si falla, usar valores por defecto
+        setStats(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    cargarEstadisticas()
+  }, [])
+
+  const userProgress = stats?.resumen.progresoGeneral ?? 0
+  const completedModules = stats?.resumen.modulosCompletados ?? 0
   const totalModules = 6
 
   const quickActions = [
@@ -24,7 +47,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
       title: "Capacitacion",
       description: "Aprende a identificar diferentes tipos de phishing con lecciones interactivas",
       color: "bg-[#0038A8]",
-      stats: "6 lecciones",
+      stats: `${stats?.capacitaciones.total ?? 6} lecciones`,
     },
     {
       id: "simulation" as const,
@@ -32,7 +55,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
       title: "Simulacion",
       description: "Practica con ejemplos reales de phishing contextualizados a Paraguay",
       color: "bg-[#CE1126]",
-      stats: "4 escenarios",
+      stats: `${stats?.simulaciones.total ?? 0} escenarios`,
     },
     {
       id: "quiz" as const,
@@ -40,7 +63,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
       title: "Evaluacion",
       description: "Pon a prueba tu conocimiento con preguntas de opcion multiple",
       color: "bg-[#0038A8]",
-      stats: "5 preguntas",
+      stats: `${stats?.evaluaciones.total ?? 0} preguntas`,
     },
     {
       id: "progress" as const,
@@ -51,6 +74,23 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
       stats: "Tiempo real",
     },
   ]
+
+  // Determinar mensaje basado en progreso
+  const getHeroTitle = () => {
+    if (userProgress === 0) return "Comienza tu entrenamiento en seguridad"
+    if (userProgress < 33) return "¡Buen comienzo! Sigue adelante"
+    if (userProgress < 66) return "Ya vamos por la mitad, sigue entrenando"
+    if (userProgress < 100) return "Casi terminas, ¡últimos pasos!"
+    return "¡Felicidades! Completaste el entrenamiento"
+  }
+
+  const getHeroSubtitle = () => {
+    if (userProgress === 0)
+      return "TRECK te guia paso a paso para que puedas identificar y prevenir ataques de phishing, con contenido contextualizado a la realidad de Paraguay."
+    if (userProgress < 50)
+      return "Continúa con las siguientes lecciones y simulaciones para fortalecer tu conocimiento sobre detección de phishing."
+    return "Has adquirido valiosos conocimientos. Recuerda mantener tus defensas activas contra los ataques de phishing."
+  }
 
   return (
     <div className="p-4 md:p-8 lg:p-10 max-w-7xl mx-auto space-y-8">
@@ -90,10 +130,10 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
                   <ParaguayFlag className="w-8 h-5 rounded-sm" />
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold leading-tight text-balance">
-                  Fortalece tu conocimiento contra ataques de phishing
+                  {getHeroTitle()}
                 </h2>
                 <p className="text-sm md:text-base opacity-80 leading-relaxed max-w-xl">
-                  TRECK te guia paso a paso para que puedas identificar y prevenir ataques de phishing, con contenido contextualizado a la realidad de Paraguay.
+                  {getHeroSubtitle()}
                 </p>
               </div>
               <Award className="w-16 h-16 opacity-30 flex-shrink-0 hidden md:block" />
@@ -102,9 +142,9 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
             <div className="mt-6 space-y-2 max-w-md">
               <div className="flex justify-between text-sm">
                 <span className="opacity-80">Progreso general</span>
-                <span className="font-semibold">{userProgress}%</span>
+                <span className="font-semibold">{loading ? "..." : `${userProgress}%`}</span>
               </div>
-              <Progress value={userProgress} className="h-2.5 bg-white/20" />
+              <Progress value={loading ? 0 : userProgress} className="h-2.5 bg-white/20" />
               <p className="text-xs opacity-70">
                 {completedModules} de {totalModules} modulos completados
               </p>

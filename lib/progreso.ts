@@ -24,6 +24,7 @@ export interface EstadisticasProgreso {
     progresoGeneral: number
     ultimaActividad: string | null
     tiempoTotal: string
+    modulosCompletados: number
   }
 }
 
@@ -99,6 +100,7 @@ export async function obtenerEstadisticasProgreso(): Promise<EstadisticasProgres
         progresoGeneral,
         ultimaActividad: formatoUltimaActividad,
         tiempoTotal: "45 min", // Esto podría calcularse mejor si se tienen timestamps
+        modulosCompletados: completadasCapacitaciones,
       },
     }
   } catch (error) {
