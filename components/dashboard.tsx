@@ -37,8 +37,13 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
   }, [])
 
   const userProgress = stats?.resumen.progresoGeneral ?? 0
-  const completedModules = stats?.resumen.modulosCompletados ?? 0
-  const totalModules = 6
+  const completedModules = Math.min(
+    (stats?.capacitaciones.completadas ?? 0 > 0 ? 1 : 0) +
+    (stats?.simulaciones.correctas ?? 0 > 0 ? 1 : 0) +
+    (stats?.evaluaciones.correctas ?? 0 > 0 ? 1 : 0),
+    3
+  )
+  const totalModules = 3 // Solo 3 módulos: Capacitación, Simulación, Evaluación
 
   const quickActions = [
     {

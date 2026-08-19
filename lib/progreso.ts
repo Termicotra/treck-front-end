@@ -54,8 +54,9 @@ export async function obtenerEstadisticasProgreso(): Promise<EstadisticasProgres
     const porcentajeEvaluaciones = totalEvaluaciones > 0 ? Math.round((correctasEvaluaciones / totalEvaluaciones) * 100) : 0
 
     // Calcular progreso general (40% capacitaciones, 30% simulaciones, 30% evaluaciones)
+    // Nota: los porcentajes ya están entre 0-100, así que multiplicamos directamente
     const progresoGeneral = Math.round(
-      (porcentajeCapacitaciones * 0.4 + porcentajeSimulaciones * 0.3 + porcentajeEvaluaciones * 0.3) / 100,
+      porcentajeCapacitaciones * 0.4 + porcentajeSimulaciones * 0.3 + porcentajeEvaluaciones * 0.3
     )
 
     // Obtener fecha de última actividad
@@ -110,18 +111,24 @@ export async function obtenerEstadisticasProgreso(): Promise<EstadisticasProgres
 }
 
 async function obtenerRespuestasEvaluaciones() {
-  const endpoint = getApiUrl("/api/evaluaciones/respuestas/")
-  const response = await fetch(endpoint, {
-    headers: buildAuthHeaders(),
-    cache: "no-store",
-  })
+  try {
+    const endpoint = getApiUrl("/api/evaluaciones/respuestas/")
+    const response = await fetch(endpoint, {
+      headers: buildAuthHeaders(),
+      cache: "no-store",
+    })
 
-  if (!response.ok) {
-    throw new Error("No se pudieron cargar las respuestas de evaluaciones.")
+    if (!response.ok) {
+      console.error("Error en endpoint de evaluaciones:", response.status, response.statusText)
+      return []
+    }
+
+    const data = (await response.json()) as any[] | { results?: any[] }
+    return Array.isArray(data) ? data : data.results ?? []
+  } catch (error) {
+    console.error("Error obtieniendo respuestas de evaluaciones:", error)
+    return []
   }
-
-  const data = (await response.json()) as any[] | { results?: any[] }
-  return Array.isArray(data) ? data : data.results ?? []
 }
 
 function formatFechaActividad(fecha: Date): string {
