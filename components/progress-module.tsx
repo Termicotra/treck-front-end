@@ -186,25 +186,7 @@ export function ProgressModule({ onBack }: ProgressModuleProps) {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-5 text-center">
-              <div className="w-12 h-12 rounded-xl bg-[#0038A8]/10 flex items-center justify-center mx-auto mb-3">
-                <Clock className="w-6 h-6 text-[#0038A8]" />
-              </div>
-              <p className="text-2xl font-bold text-foreground">{stats.resumen.tiempoTotal}</p>
-              <p className="text-xs text-muted-foreground mt-1">Tiempo total</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-5 text-center">
-              <div className="w-12 h-12 rounded-xl bg-[#CE1126]/10 flex items-center justify-center mx-auto mb-3">
-                <Target className="w-6 h-6 text-[#CE1126]" />
-              </div>
-              <p className="text-2xl font-bold text-foreground text-base">{stats.resumen.ultimaActividad}</p>
-              <p className="text-xs text-muted-foreground mt-1">Ultima actividad</p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="p-5 text-center">
               <div className="w-12 h-12 rounded-xl bg-[#0038A8]/10 flex items-center justify-center mx-auto mb-3">
@@ -221,6 +203,15 @@ export function ProgressModule({ onBack }: ProgressModuleProps) {
               </div>
               <p className="text-2xl font-bold text-foreground">{stats.simulaciones.correctas}</p>
               <p className="text-xs text-muted-foreground mt-1">Simulaciones correctas</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-5 text-center">
+              <div className="w-12 h-12 rounded-xl bg-[#0038A8]/10 flex items-center justify-center mx-auto mb-3">
+                <Award className="w-6 h-6 text-[#0038A8]" />
+              </div>
+              <p className="text-2xl font-bold text-foreground">{stats.evaluaciones.correctas}</p>
+              <p className="text-xs text-muted-foreground mt-1">Evaluaciones correctas</p>
             </CardContent>
           </Card>
         </div>

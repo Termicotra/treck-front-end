@@ -30,11 +30,14 @@ export interface EstadisticasProgreso {
 
 export async function obtenerEstadisticasProgreso(): Promise<EstadisticasProgreso> {
   try {
-    const [progresoCapacitaciones, respuestasSimulaciones, respuestasEvaluaciones] = await Promise.all([
-      obtenerProgresoCapacitaciones(),
-      obtenerRespuestasSimulaciones(),
-      obtenerRespuestasEvaluaciones(),
-    ])
+    const [progresoCapacitaciones, respuestasSimulaciones, respuestasEvaluaciones, totalesSimulaciones, totalesEvaluaciones] =
+      await Promise.all([
+        obtenerProgresoCapacitaciones(),
+        obtenerRespuestasSimulaciones(),
+        obtenerRespuestasEvaluaciones(),
+        obtenerTotalSimulaciones(),
+        obtenerTotalEvaluaciones(),
+      ])
 
     // Calcular estadísticas de capacitaciones
     const totalCapacitaciones = 6 // Asumiendo 6 lecciones como está en el seed
@@ -42,16 +45,19 @@ export async function obtenerEstadisticasProgreso(): Promise<EstadisticasProgres
     const porcentajeCapacitaciones = totalCapacitaciones > 0 ? Math.round((completadasCapacitaciones / totalCapacitaciones) * 100) : 0
 
     // Calcular estadísticas de simulaciones
-    const totalSimulaciones = respuestasSimulaciones.length
-    const correctasSimulaciones = respuestasSimulaciones.filter((r) => r.es_correcta).length
-    const incorrectasSimulaciones = totalSimulaciones - correctasSimulaciones
-    const porcentajeSimulaciones = totalSimulaciones > 0 ? Math.round((correctasSimulaciones / totalSimulaciones) * 100) : 0
+    // El porcentaje se calcula sobre respuestas correctas vs respuestas totales del usuario
+    const correctasSimulaciones = respuestasSimulaciones.filter((r: any) => r.es_correcta).length
+    const incorrectasSimulaciones = respuestasSimulaciones.filter((r: any) => !r.es_correcta).length
+    const totalSimulacionesRespondidas = respuestasSimulaciones.length
+    const porcentajeSimulaciones = totalSimulacionesRespondidas > 0 ? Math.round((correctasSimulaciones / totalSimulacionesRespondidas) * 100) : 0
 
     // Calcular estadísticas de evaluaciones
-    const totalEvaluaciones = respuestasEvaluaciones.length
-    const correctasEvaluaciones = respuestasEvaluaciones.filter((r) => r.es_correcta).length
-    const incorrectasEvaluaciones = totalEvaluaciones - correctasEvaluaciones
-    const porcentajeEvaluaciones = totalEvaluaciones > 0 ? Math.round((correctasEvaluaciones / totalEvaluaciones) * 100) : 0
+    // El porcentaje se calcula sobre respuestas correctas vs respuestas totales del usuario
+    const correctasEvaluaciones = respuestasEvaluaciones.filter((r: any) => r.es_correcta).length
+    const incorrectasEvaluaciones = respuestasEvaluaciones.filter((r: any) => !r.es_correcta).length
+    const totalEvaluacionesRespondidas = respuestasEvaluaciones.length
+    const totalEvaluacionesDisponibles = totalesEvaluaciones // Dinámico del backend
+    const porcentajeEvaluaciones = totalEvaluacionesRespondidas > 0 ? Math.round((correctasEvaluaciones / totalEvaluacionesRespondidas) * 100) : 0
 
     // Calcular progreso general (40% capacitaciones, 30% simulaciones, 30% evaluaciones)
     // Nota: los porcentajes ya están entre 0-100, así que multiplicamos directamente
@@ -86,13 +92,13 @@ export async function obtenerEstadisticasProgreso(): Promise<EstadisticasProgres
         porcentaje: porcentajeCapacitaciones,
       },
       simulaciones: {
-        total: totalSimulaciones,
+        total: totalSimulacionesRespondidas,
         correctas: correctasSimulaciones,
         incorrectas: incorrectasSimulaciones,
         porcentaje: porcentajeSimulaciones,
       },
       evaluaciones: {
-        total: totalEvaluaciones,
+        total: totalEvaluacionesDisponibles,
         correctas: correctasEvaluaciones,
         incorrectas: incorrectasEvaluaciones,
         porcentaje: porcentajeEvaluaciones,
@@ -128,6 +134,46 @@ async function obtenerRespuestasEvaluaciones() {
   } catch (error) {
     console.error("Error obtieniendo respuestas de evaluaciones:", error)
     return []
+  }
+}
+
+async function obtenerTotalSimulaciones() {
+  try {
+    const endpoint = getApiUrl("/api/simulaciones/totales/")
+    const response = await fetch(endpoint, {
+      cache: "no-store",
+    })
+
+    if (!response.ok) {
+      console.error("Error obteniendo total de simulaciones:", response.status)
+      return 0
+    }
+
+    const data = (await response.json()) as { total: number }
+    return data.total ?? 0
+  } catch (error) {
+    console.error("Error obtieniendo total de simulaciones:", error)
+    return 0
+  }
+}
+
+async function obtenerTotalEvaluaciones() {
+  try {
+    const endpoint = getApiUrl("/api/evaluaciones/totales/")
+    const response = await fetch(endpoint, {
+      cache: "no-store",
+    })
+
+    if (!response.ok) {
+      console.error("Error obteniendo total de evaluaciones:", response.status)
+      return 4 // Default a 4 si falla
+    }
+
+    const data = (await response.json()) as { total: number }
+    return data.total ?? 4
+  } catch (error) {
+    console.error("Error obtieniendo total de evaluaciones:", error)
+    return 4
   }
 }
 
