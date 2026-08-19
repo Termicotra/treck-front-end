@@ -131,24 +131,21 @@ function pickRecentUniqueSimulations(items: SimulationApiItem[]) {
   const totalSimulations = items.length
   const selectedCount = determinateSelectedCount(totalSimulations)
 
-  const recentItems = sortNewestFirstApi(items).slice(0, selectedCount)
-  const groupedItems = new Map<string, SimulationApiItem[]>()
+  const sortedItems = sortNewestFirstApi(items)
+  const usedArticles = new Set<number | null>()
+  const selectedItems: SimulationApiItem[] = []
 
-  for (const item of recentItems) {
-    const groupKey = item.articulo != null ? `article:${item.articulo}` : `item:${item.id}`
-    const group = groupedItems.get(groupKey) ?? []
-    group.push(item)
-    groupedItems.set(groupKey, group)
+  for (const item of sortedItems) {
+    if (selectedItems.length >= selectedCount) break
+
+    const articleKey = item.articulo ?? null
+    if (!usedArticles.has(articleKey)) {
+      selectedItems.push(item)
+      usedArticles.add(articleKey)
+    }
   }
 
-  return shuffleItems(
-    Array.from(groupedItems.values()).map((group) => {
-      if (group.length === 1) return group[0]
-
-      const randomIndex = getRandomIndex(group.length)
-      return group[randomIndex]
-    }),
-  )
+  return shuffleItems(selectedItems)
 }
 
 function getProgressDotClass(index: number, currentIndex: number) {
