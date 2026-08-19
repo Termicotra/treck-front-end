@@ -121,8 +121,17 @@ function getRandomIndex(maxExclusive: number) {
   return randomValues[0] % maxExclusive
 }
 
+function determinateSelectedCount(totalSimulations: number): number {
+  if (totalSimulations >= 20) return 20
+  if (totalSimulations >= 15) return 15
+  return totalSimulations
+}
+
 function pickRecentUniqueSimulations(items: SimulationApiItem[]) {
-  const recentItems = sortNewestFirstApi(items).slice(0, 20)
+  const totalSimulations = items.length
+  const selectedCount = determinateSelectedCount(totalSimulations)
+
+  const recentItems = sortNewestFirstApi(items).slice(0, selectedCount)
   const groupedItems = new Map<string, SimulationApiItem[]>()
 
   for (const item of recentItems) {
@@ -274,7 +283,7 @@ export function SimulationModule({ onBack }: Readonly<SimulationModuleProps>) {
         <Card className="w-full max-w-xl">
           <CardContent className="p-6 space-y-3 text-center">
             <h2 className="text-lg font-bold text-foreground">No hay simulaciones disponibles</h2>
-            <p className="text-sm text-muted-foreground">El frontend solo muestra las 20 simulaciones mas recientes.</p>
+            <p className="text-sm text-muted-foreground">Carga simulaciones desde el panel de administración para comenzar.</p>
           </CardContent>
         </Card>
       </div>
