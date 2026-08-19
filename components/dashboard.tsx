@@ -60,7 +60,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
       title: "Simulacion",
       description: "Practica con ejemplos reales de phishing contextualizados a Paraguay",
       color: "bg-[#CE1126]",
-      stats: `${stats?.simulaciones.total ?? 0} escenarios`,
+      stats: "10-20 escenarios",
     },
     {
       id: "quiz" as const,
@@ -68,7 +68,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
       title: "Evaluacion",
       description: "Pon a prueba tu conocimiento con preguntas de opcion multiple",
       color: "bg-[#0038A8]",
-      stats: `${stats?.evaluaciones.total ?? 0} preguntas`,
+      stats: `${stats?.evaluaciones.total ?? 4} preguntas`,
     },
     {
       id: "progress" as const,
