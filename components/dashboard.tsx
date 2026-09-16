@@ -293,7 +293,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
           <ParaguayFlag className="w-6 h-4 rounded-sm" />
         </p>
         <p className="text-xs text-muted-foreground">
-          Federico Gabriel Traversi Ramirez - Universidad del Norte
+          Federico Gabriel Traversi Ramirez | Universidad Católica - Campus Guairá
         </p>
       </div>
     </div>
