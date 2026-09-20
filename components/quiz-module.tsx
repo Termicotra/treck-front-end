@@ -313,17 +313,21 @@ export function QuizModule({ onBack }: Readonly<QuizModuleProps>) {
   }
 
   const handleRestart = async () => {
+    setLoading(true)
+    setError(null)
+
     try {
-      const response = await fetch(RESETEAR_ENDPOINT, {
+      // 1. Resetear respuestas en el servidor
+      const resetResponse = await fetch(RESETEAR_ENDPOINT, {
         method: "POST",
         headers: buildAuthHeaders(),
       })
 
-      if (!response.ok) {
+      if (!resetResponse.ok) {
         throw new Error("No se pudo reiniciar las evaluaciones.")
       }
 
-      // Recargar evaluaciones pendientes
+      // 2. Recargar evaluaciones pendientes
       const pendientesResponse = await fetch(PENDIENTES_ENDPOINT, {
         headers: buildAuthHeaders(),
         cache: "no-store",
@@ -335,8 +339,9 @@ export function QuizModule({ onBack }: Readonly<QuizModuleProps>) {
 
       const data = (await pendientesResponse.json()) as PendientesResponse
 
+      // 3. Determinar qué mostrar
       if (data.total_pendientes === 0) {
-        // Sin pendientes: mostrar progreso vacío
+        // Sin pendientes: mostrar pantalla de progreso
         const statsResponse = await fetch(ESTADISTICAS_ENDPOINT, {
           headers: buildAuthHeaders(),
           cache: "no-store",
@@ -345,6 +350,10 @@ export function QuizModule({ onBack }: Readonly<QuizModuleProps>) {
         if (statsResponse.ok) {
           const stats = (await statsResponse.json()) as EstadisticasResponse
           setEstadisticas(stats)
+          setState("mostrando-progreso")
+        } else {
+          setError("No se pudieron cargar las estadísticas")
+          setState("error")
         }
       } else {
         // Con pendientes: mostrar ejercicios
@@ -352,14 +361,23 @@ export function QuizModule({ onBack }: Readonly<QuizModuleProps>) {
           .map(normalizeExercise)
           .filter((exercise) => exercise.options.length >= 2)
 
-        setExercises(normalized)
-        setCurrentIndex(0)
-        setSelectedOptionId(null)
-        setResult(null)
-        setState("mostrando-ejercicios")
+        if (normalized.length === 0) {
+          setError("No hay ejercicios disponibles para mostrar")
+          setState("error")
+        } else {
+          setExercises(normalized)
+          setCurrentIndex(0)
+          setSelectedOptionId(null)
+          setResult(null)
+          setState("mostrando-ejercicios")
+        }
       }
     } catch (e) {
       console.error("Error reiniciando evaluaciones:", e)
+      setError(e instanceof Error ? e.message : "Error al reiniciar las evaluaciones")
+      setState("error")
+    } finally {
+      setLoading(false)
     }
   }
 
