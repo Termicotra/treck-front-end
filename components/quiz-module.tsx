@@ -140,20 +140,35 @@ export function QuizModule({ onBack }: Readonly<QuizModuleProps>) {
   const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null)
   const [result, setResult] = useState<AnswerResult | null>(null)
   const [estadisticas, setEstadisticas] = useState<EstadisticasResponse | null>(null)
+  const [estadisticasGlobales, setEstadisticasGlobales] = useState<EstadisticasResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  // Cargar evaluaciones pendientes al iniciar
+  // Cargar estadísticas globales y evaluaciones pendientes al iniciar
   useEffect(() => {
     let active = true
 
-    const loadPendientes = async () => {
+    const loadData = async () => {
       setLoading(true)
       setError(null)
 
       try {
+        // Cargar estadísticas globales (total completado)
+        const statsResponse = await fetch(ESTADISTICAS_ENDPOINT, {
+          headers: buildAuthHeaders(),
+          cache: "no-store",
+        })
+
+        if (statsResponse.ok) {
+          const statsData = (await statsResponse.json()) as EstadisticasResponse
+          if (active) {
+            setEstadisticasGlobales(statsData)
+          }
+        }
+
+        // Cargar evaluaciones pendientes
         const response = await fetch(PENDIENTES_ENDPOINT, {
           headers: buildAuthHeaders(),
           cache: "no-store",
@@ -204,7 +219,7 @@ export function QuizModule({ onBack }: Readonly<QuizModuleProps>) {
       }
     }
 
-    void loadPendientes()
+    void loadData()
 
     return () => {
       active = false
@@ -571,7 +586,9 @@ export function QuizModule({ onBack }: Readonly<QuizModuleProps>) {
                 </div>
               </div>
               <div className="hidden md:block text-right">
-                <p className="text-2xl font-bold">{currentIndex}/4</p>
+                <p className="text-2xl font-bold">
+                  {estadisticasGlobales?.ejercicios_respondidos ?? 0}/4
+                </p>
                 <p className="text-xs opacity-80">Completadas</p>
               </div>
             </div>
@@ -579,9 +596,11 @@ export function QuizModule({ onBack }: Readonly<QuizModuleProps>) {
             <div className="mt-5 space-y-2 max-w-md">
               <div className="flex justify-between text-sm">
                 <span className="opacity-80">
-                  Progreso: {currentIndex} de 4 completadas
+                  Pregunta {currentIndex + 1} de {exercises.length}
                 </span>
-                <span className="font-semibold md:hidden">{currentIndex} de 4</span>
+                <span className="font-semibold md:hidden">
+                  {estadisticasGlobales?.ejercicios_respondidos ?? 0}/4 completadas
+                </span>
               </div>
               <Progress value={progress} className="h-2.5 bg-white/20" />
             </div>
