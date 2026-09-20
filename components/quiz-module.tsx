@@ -571,8 +571,8 @@ export function QuizModule({ onBack }: Readonly<QuizModuleProps>) {
                 </div>
               </div>
               <div className="hidden md:block text-right">
-                <p className="text-2xl font-bold">{currentIndex + 1}</p>
-                <p className="text-xs opacity-80">Pregunta</p>
+                <p className="text-2xl font-bold">{currentIndex + 1} de {exercises.length}</p>
+                <p className="text-xs opacity-80">Preguntas</p>
               </div>
             </div>
 
