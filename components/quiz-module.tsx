@@ -571,17 +571,17 @@ export function QuizModule({ onBack }: Readonly<QuizModuleProps>) {
                 </div>
               </div>
               <div className="hidden md:block text-right">
-                <p className="text-2xl font-bold">{currentIndex + 1} de {exercises.length}</p>
-                <p className="text-xs opacity-80">Preguntas</p>
+                <p className="text-2xl font-bold">{currentIndex}/4</p>
+                <p className="text-xs opacity-80">Completadas</p>
               </div>
             </div>
 
             <div className="mt-5 space-y-2 max-w-md">
               <div className="flex justify-between text-sm">
                 <span className="opacity-80">
-                  Pregunta {currentIndex + 1} de {exercises.length}
+                  Progreso: {currentIndex} de 4 completadas
                 </span>
-                <span className="font-semibold md:hidden">Pregunta {currentIndex + 1}</span>
+                <span className="font-semibold md:hidden">{currentIndex} de 4</span>
               </div>
               <Progress value={progress} className="h-2.5 bg-white/20" />
             </div>
