@@ -342,7 +342,18 @@ export function QuizModule({ onBack }: Readonly<QuizModuleProps>) {
         throw new Error("No se pudo reiniciar las evaluaciones.")
       }
 
-      // 2. Recargar evaluaciones pendientes
+      // 2. Recargar estadísticas globales
+      const statsResponse = await fetch(ESTADISTICAS_ENDPOINT, {
+        headers: buildAuthHeaders(),
+        cache: "no-store",
+      })
+
+      if (statsResponse.ok) {
+        const statsData = (await statsResponse.json()) as EstadisticasResponse
+        setEstadisticasGlobales(statsData)
+      }
+
+      // 3. Recargar evaluaciones pendientes
       const pendientesResponse = await fetch(PENDIENTES_ENDPOINT, {
         headers: buildAuthHeaders(),
         cache: "no-store",
