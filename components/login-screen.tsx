@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode, type SyntheticEvent } from "react"
 import { useRouter } from "next/navigation"
-import { Shield, Eye, EyeOff, Lock, ArrowRight, UserPlus, Mail } from "lucide-react"
+import { Shield, Eye, EyeOff, Lock, ArrowRight, UserPlus, Mail, Check, X } from "lucide-react"
 import { ParaguayFlag, ParaguayFlagBanner } from "@/components/paraguay-flag"
 import { cn } from "@/lib/utils"
 import { AuthApiError, clearAuthSession, loginWithApi, registerWithApi, saveAuthSession } from "@/lib/auth"
@@ -39,6 +39,46 @@ function isDuplicateFieldError(error: AuthApiError, field: "username" | "email")
   )
 }
 
+function validatePasswordRequirements(password: string, username: string) {
+  return {
+    minLength: password.length >= 8,
+    notAllNumbers: !/^\d+$/.test(password),
+    notSimilarToUsername: password.toLowerCase() !== username.toLowerCase() && !password.toLowerCase().includes(username.toLowerCase()),
+  }
+}
+
+function PasswordRequirements({ password, username }: { password: string; username: string }) {
+  const reqs = validatePasswordRequirements(password, username)
+  const allMet = Object.values(reqs).every((v) => v)
+
+  return (
+    <div className="mt-3 bg-muted/50 rounded-lg p-3 border border-border space-y-2">
+      <p className="text-xs font-medium text-muted-foreground">Requisitos de contraseña:</p>
+      <div className="space-y-1.5">
+        {[
+          { label: "Mínimo 8 caracteres", met: reqs.minLength },
+          { label: "No puede ser solo números", met: reqs.notAllNumbers },
+          { label: "No puede ser similar al usuario", met: reqs.notSimilarToUsername },
+        ].map((req) => (
+          <div key={req.label} className="flex items-center gap-2">
+            {req.met ? (
+              <Check className="w-4 h-4 text-green-600" />
+            ) : (
+              <X className="w-4 h-4 text-red-500" />
+            )}
+            <span className={cn("text-xs", req.met ? "text-green-700" : "text-red-600")}>
+              {req.label}
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground pt-2 border-t border-border">
+        Nota: El servidor también rechaza contraseñas muy comunes.
+      </p>
+    </div>
+  )
+}
+
 export function LoginScreen() {
   const router = useRouter()
   const [mode, setMode] = useState<"login" | "register">("login")
@@ -57,6 +97,11 @@ export function LoginScreen() {
       if (form.username.trim().length < 3) next.username = "Mínimo 3 caracteres."
       if (form.email.trim() && !isValidEmail(form.email)) next.email = "Correo no válido."
       if (form.password !== form.confirm) next.confirm = "Las contraseñas no coinciden."
+      if (form.password.length < 8) next.password = "Mínimo 8 caracteres."
+
+      const reqs = validatePasswordRequirements(form.password, form.username)
+      if (!reqs.notAllNumbers) next.password = "No puede ser solo números."
+      if (!reqs.notSimilarToUsername) next.password = "No puede ser similar al usuario."
     }
 
     if (!form.password) next.password = "Ingresa una contraseña."
@@ -302,15 +347,20 @@ export function LoginScreen() {
                 <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                   {field("username", "Nombre de usuario", "text", <UserPlus className="w-4 h-4" />)}
                   {mode === "register" && field("email", "Correo electronico (opcional)", "email", <Mail className="w-4 h-4" />)}
-                  {field(
-                    "password",
-                    "Contrasena",
-                    showPassword ? "text" : "password",
-                    <Lock className="w-4 h-4" />,
-                    <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label="Mostrar contrasena">
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>,
-                  )}
+                  <div>
+                    {field(
+                      "password",
+                      "Contrasena",
+                      showPassword ? "text" : "password",
+                      <Lock className="w-4 h-4" />,
+                      <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label="Mostrar contrasena">
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>,
+                    )}
+                    {mode === "register" && form.password && (
+                      <PasswordRequirements password={form.password} username={form.username} />
+                    )}
+                  </div>
                   {mode === "register" &&
                     field(
                       "confirm",
