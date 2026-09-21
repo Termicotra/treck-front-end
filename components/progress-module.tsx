@@ -257,10 +257,10 @@ export function ProgressModule({ onBack }: ProgressModuleProps) {
                 <FileText className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h4 className="font-bold text-foreground">Modulo de Auditoria</h4>
+                <h4 className="font-bold text-foreground">Módulo de Auditoría</h4>
                 <p className="text-sm text-muted-foreground mt-1 leading-relaxed max-w-2xl">
-                  Este modulo registra tu progreso de forma sistematica para evaluar la adquisicion de conocimientos sobre
-                  deteccion de phishing. Los datos se utilizan para mejorar continuamente el contenido educativo y medir la
+                  Este módulo registra tu progreso de forma sistemática para evaluar la adquisición de conocimientos sobre
+                  detección de phishing. Los datos se utilizan para mejorar continuamente el contenido educativo y medir la
                   efectividad del programa TRECK en el contexto paraguayo.
                 </p>
               </div>

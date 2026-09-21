@@ -302,7 +302,7 @@ export function SimulationModule({ onBack }: Readonly<SimulationModuleProps>) {
                 <Target className="w-7 h-7" />
               </div>
               <div>
-                <h1 className="text-xl md:text-2xl font-bold">Modulo de Simulacion</h1>
+                <h1 className="text-xl md:text-2xl font-bold">Módulo de Simulación</h1>
                 <p className="text-sm opacity-80">Practica detectando phishing con ejemplos reales</p>
               </div>
             </div>
@@ -314,7 +314,7 @@ export function SimulationModule({ onBack }: Readonly<SimulationModuleProps>) {
 
           <div className="mt-4 flex items-center justify-between">
             <span className="text-sm opacity-80">
-              Simulacion {currentIndex + 1} de {simulations.length}
+              Simulación {currentIndex + 1} de {simulations.length}
             </span>
             <span className="text-sm font-semibold md:hidden">
               Aciertos: {score.correct}/{score.total}
@@ -482,7 +482,7 @@ export function SimulationModule({ onBack }: Readonly<SimulationModuleProps>) {
                       {current.articleTitle && (
                         <li className="flex items-start gap-2">
                           <AlertTriangle className="w-4 h-4 text-[#CE1126] mt-0.5 flex-shrink-0" />
-                          <span>Articulo: {current.articleTitle}</span>
+                          <span>Artículo: {current.articleTitle}</span>
                         </li>
                       )}
                       {current.articleUrl && (

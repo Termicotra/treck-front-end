@@ -240,7 +240,7 @@ export function TrainingModule({ onBack }: TrainingModuleProps) {
               <BookOpen className="w-7 h-7" />
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-bold">Modulo de Capacitacion</h1>
+              <h1 className="text-xl md:text-2xl font-bold">Módulo de Capacitación</h1>
               <p className="text-sm opacity-80">Aprende a identificar phishing paso a paso</p>
             </div>
           </div>

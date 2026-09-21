@@ -136,7 +136,7 @@ export function LoginScreen() {
 
   const submitLogin = async () => {
     const session = await loginWithApi({
-      username: form.username.trim(),
+      username: form.username.trim().toLowerCase(),
       password: form.password,
     })
 
@@ -255,9 +255,9 @@ export function LoginScreen() {
 
           <div className="space-y-3 text-left">
             {[
-              "Modulo de Capacitacion interactiva",
+              "Módulo de Capacitación interactiva",
               "Simulaciones de ataques reales",
-              "Evaluaciones con retroalimentacion",
+              "Evaluaciones con retroalimentación",
               "Seguimiento de tu progreso",
             ].map((feat) => (
               <div key={feat} className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3 border border-white/15">
@@ -297,7 +297,7 @@ export function LoginScreen() {
               </div>
               <div>
                 <h1 className="text-2xl font-extrabold text-foreground">TRECK</h1>
-                <p className="text-xs text-muted-foreground">Deteccion de Phishing</p>
+                <p className="text-xs text-muted-foreground">Detección de Phishing</p>
               </div>
             </div>
 
@@ -317,8 +317,8 @@ export function LoginScreen() {
                   </h2>
                   <p className="text-sm text-muted-foreground">
                     {mode === "login"
-                      ? "Ingresa tus credenciales para continuar tu capacitacion."
-                      : "Registrate para comenzar a aprender sobre seguridad."}
+                      ? "Ingresa tus credenciales para continuar tu capacitación."
+                      : "Regístrate para comenzar a aprender sobre seguridad."}
                   </p>
                 </div>
 
@@ -339,21 +339,21 @@ export function LoginScreen() {
                           : "text-muted-foreground hover:text-foreground",
                       )}
                     >
-                      {m === "login" ? "Iniciar Sesion" : "Registrarse"}
+                      {m === "login" ? "Iniciar Sesión" : "Registrarse"}
                     </button>
                   ))}
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                   {field("username", "Nombre de usuario", "text", <UserPlus className="w-4 h-4" />)}
-                  {mode === "register" && field("email", "Correo electronico (opcional)", "email", <Mail className="w-4 h-4" />)}
+                  {mode === "register" && field("email", "Correo electrónico (opcional)", "email", <Mail className="w-4 h-4" />)}
                   <div>
                     {field(
                       "password",
-                      "Contrasena",
+                      "Contraseña",
                       showPassword ? "text" : "password",
                       <Lock className="w-4 h-4" />,
-                      <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label="Mostrar contrasena">
+                      <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label="Mostrar contraseña">
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>,
                     )}
@@ -364,10 +364,10 @@ export function LoginScreen() {
                   {mode === "register" &&
                     field(
                       "confirm",
-                      "Confirmar contrasena",
+                      "Confirmar contraseña",
                       showConfirm ? "text" : "password",
                       <Lock className="w-4 h-4" />,
-                      <button type="button" onClick={() => setShowConfirm((v) => !v)} aria-label="Mostrar confirmacion">
+                      <button type="button" onClick={() => setShowConfirm((v) => !v)} aria-label="Mostrar confirmación">
                         {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>,
                     )}
@@ -375,7 +375,7 @@ export function LoginScreen() {
                   {mode === "login" && (
                     <div className="flex justify-end">
                       <button type="button" className="text-xs text-[#0038A8] hover:underline">
-                        Olvide mi contrasena
+                        Olvidé mi contraseña
                       </button>
                     </div>
                   )}
@@ -393,7 +393,7 @@ export function LoginScreen() {
                       <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                     ) : (
                       <>
-                        {mode === "login" ? "Iniciar Sesion" : "Crear Cuenta"}
+                        {mode === "login" ? "Iniciar Sesión" : "Crear Cuenta"}
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}

@@ -14,9 +14,9 @@ interface WebSidebarProps {
 
 const navItems = [
   { id: "dashboard" as const, icon: Home, label: "Inicio", color: "bg-[#0038A8]" },
-  { id: "training" as const, icon: BookOpen, label: "Capacitacion", color: "bg-[#CE1126]" },
-  { id: "simulation" as const, icon: Target, label: "Simulacion", color: "bg-[#0038A8]" },
-  { id: "quiz" as const, icon: HelpCircle, label: "Evaluacion", color: "bg-[#CE1126]" },
+  { id: "training" as const, icon: BookOpen, label: "Capacitación", color: "bg-[#CE1126]" },
+  { id: "simulation" as const, icon: Target, label: "Simulación", color: "bg-[#0038A8]" },
+  { id: "quiz" as const, icon: HelpCircle, label: "Evaluación", color: "bg-[#CE1126]" },
   { id: "progress" as const, icon: BarChart3, label: "Progreso", color: "bg-[#0038A8]" },
   { id: "profile" as const, icon: UserCircle, label: "Mi Perfil", color: "bg-[#CE1126]" },
 ]

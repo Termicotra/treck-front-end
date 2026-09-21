@@ -49,7 +49,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
     {
       id: "training" as const,
       icon: BookOpen,
-      title: "Capacitacion",
+      title: "Capacitación",
       description: "Aprende a identificar diferentes tipos de phishing con lecciones interactivas",
       color: "bg-[#0038A8]",
       stats: `${stats?.capacitaciones.total ?? 6} lecciones`,
@@ -57,7 +57,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
     {
       id: "simulation" as const,
       icon: Target,
-      title: "Simulacion",
+      title: "Simulación",
       description: "Practica con ejemplos reales de phishing contextualizados a Paraguay",
       color: "bg-[#CE1126]",
       stats: "10-20 escenarios",
@@ -65,8 +65,8 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
     {
       id: "quiz" as const,
       icon: HelpCircle,
-      title: "Evaluacion",
-      description: "Pon a prueba tu conocimiento con preguntas de opcion multiple",
+      title: "Evaluación",
+      description: "Pon a prueba tu conocimiento con preguntas de opción múltiple",
       color: "bg-[#0038A8]",
       stats: `${stats?.evaluaciones.total ?? 4} preguntas`,
     },
@@ -74,7 +74,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
       id: "progress" as const,
       icon: TrendingUp,
       title: "Mi Progreso",
-      description: "Visualiza tu avance y estadisticas de aprendizaje",
+      description: "Visualiza tu avance y estadísticas de aprendizaje",
       color: "bg-[#CE1126]",
       stats: "Tiempo real",
     },
@@ -112,7 +112,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
               Bienvenido a TRECK
             </h1>
             <p className="text-sm md:text-base text-muted-foreground">
-              Plataforma de Entrenamiento en Deteccion de Phishing
+              Plataforma de Entrenamiento en Detección de Phishing
             </p>
           </div>
         </div>
@@ -151,7 +151,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
               </div>
               <Progress value={loading ? 0 : userProgress} className="h-2.5 bg-white/20" />
               <p className="text-xs opacity-70">
-                {completedModules} de {totalModules} modulos completados
+                {completedModules} de {totalModules} módulos completados
               </p>
             </div>
           </CardContent>
@@ -167,7 +167,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
               <div>
                 <p className="font-semibold text-foreground">+551M intentos</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  de ciberataques en Paraguay en 2025 segun Fortinet
+                  de ciberataques en Paraguay en 2025 según Fortinet
                 </p>
               </div>
             </CardContent>
@@ -181,7 +181,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
               <div>
                 <p className="font-semibold text-foreground">3er pais mas atacado</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  en Latinoamerica por phishing e ingenieria social
+                  en Latinoamérica por phishing e ingeniería social
                 </p>
               </div>
             </CardContent>
@@ -206,14 +206,14 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
       {/* TRECK Acronym */}
       <Card className="border-0 shadow-md bg-card">
         <CardContent className="p-6 md:p-8">
-          <h3 className="font-bold text-lg text-foreground mb-5">Que es TRECK?</h3>
+          <h3 className="font-bold text-lg text-foreground mb-5">¿Qué es TRECK?</h3>
           <div className="grid grid-cols-5 gap-3 md:gap-6">
             {[
-              { letter: "T", word: "Tecnologia", desc: "Herramientas digitales de aprendizaje", color: "bg-[#CE1126]" },
-              { letter: "R", word: "Riesgo", desc: "Evaluacion y gestion de amenazas", color: "bg-[#0038A8]" },
-              { letter: "E", word: "Educacion", desc: "Contenido pedagogico estructurado", color: "bg-[#CE1126]" },
-              { letter: "C", word: "Conciencia", desc: "Sensibilizacion sobre ciberseguridad", color: "bg-[#0038A8]" },
-              { letter: "K", word: "Know-how", desc: "Conocimiento practico aplicable", color: "bg-[#CE1126]" },
+              { letter: "T", word: "Tecnología", desc: "Herramientas digitales de aprendizaje", color: "bg-[#CE1126]" },
+              { letter: "R", word: "Riesgo", desc: "Evaluación y gestión de amenazas", color: "bg-[#0038A8]" },
+              { letter: "E", word: "Educación", desc: "Contenido pedagógico estructurado", color: "bg-[#CE1126]" },
+              { letter: "C", word: "Conciencia", desc: "Sensibilización sobre ciberseguridad", color: "bg-[#0038A8]" },
+              { letter: "K", word: "Know-how", desc: "Conocimiento práctico aplicable", color: "bg-[#CE1126]" },
             ].map((item) => (
               <div key={item.letter} className="text-center group">
                 <div
@@ -231,7 +231,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
 
       {/* Modules Grid */}
       <div className="space-y-5">
-        <h3 className="font-bold text-lg text-foreground">Modulos de Aprendizaje</h3>
+        <h3 className="font-bold text-lg text-foreground">Módulos de Aprendizaje</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
           {quickActions.map((action) => {
             const Icon = action.icon
@@ -277,7 +277,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
             <div>
               <h4 className="font-bold text-foreground">Consejo de seguridad</h4>
               <p className="text-sm text-muted-foreground mt-1 leading-relaxed max-w-2xl">
-                Nunca compartas tus contrasenas o datos personales por correo electronico, SMS o llamada telefonica. Las instituciones legitimas nunca solicitan esta informacion por estos medios. Si recibes un mensaje sospechoso, contacta directamente a la entidad por sus canales oficiales.
+                Nunca compartas tus contraseñas o datos personales por correo electrónico, SMS o llamada telefónica. Las instituciones legítimas nunca solicitan esta información por estos medios. Si recibes un mensaje sospechoso, contacta directamente a la entidad por sus canales oficiales.
               </p>
             </div>
           </div>
@@ -293,7 +293,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
           <ParaguayFlag className="w-6 h-4 rounded-sm" />
         </p>
         <p className="text-xs text-muted-foreground">
-          Federico Gabriel Traversi Ramirez | Universidad Católica - Campus Guairá
+          Federico Gabriel Traversi Ramírez | Universidad Católica - Campus Guairá
         </p>
       </div>
     </div>
