@@ -41,17 +41,15 @@ export function WebHeader({ activeModule, onNavigate, userName = "Usuario" }: We
       </div>
 
       <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2.5 flex-1">
+        <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#CE1126] via-white to-[#0038A8] p-0.5 shadow-sm">
             <div className="w-full h-full rounded-md bg-card flex items-center justify-center">
               <Shield className="w-4 h-4 text-[#0038A8]" />
             </div>
           </div>
-          <div className="min-w-0">
+          <div>
             <h1 className="text-base font-bold text-foreground leading-tight">TRECK</h1>
-            <div className="text-[8px] text-muted-foreground leading-tight">
-              <div><span className="font-semibold">T</span>ecnología <span className="font-semibold">R</span>iesgo <span className="font-semibold">E</span>ducación <span className="font-semibold">C</span>onciencia <span className="font-semibold">K</span>now</div>
-            </div>
+            <p className="text-[10px] text-muted-foreground">Deteccion de Phishing</p>
           </div>
         </div>
 
@@ -101,6 +99,18 @@ export function WebHeader({ activeModule, onNavigate, userName = "Usuario" }: We
               </button>
             )
           })}
+
+          {/* TRECK Acronym - Mobile */}
+          <div className="mt-4 pt-4 border-t border-border">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-2">¿Qué es TRECK?</p>
+            <div className="space-y-1.5 text-[11px] text-muted-foreground">
+              <div><span className="font-semibold text-foreground">T</span> - Tecnología</div>
+              <div><span className="font-semibold text-foreground">R</span> - Riesgo</div>
+              <div><span className="font-semibold text-foreground">E</span> - Educación</div>
+              <div><span className="font-semibold text-foreground">C</span> - Conciencia</div>
+              <div><span className="font-semibold text-foreground">K</span> - Know-how</div>
+            </div>
+          </div>
 
         </nav>
       )}
