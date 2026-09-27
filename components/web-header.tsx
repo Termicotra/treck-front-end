@@ -14,9 +14,9 @@ interface WebHeaderProps {
 
 const navItems = [
   { id: "dashboard" as const, icon: Home, label: "Inicio", color: "bg-[#0038A8]" },
-  { id: "training" as const, icon: BookOpen, label: "Aprender", color: "bg-[#CE1126]" },
-  { id: "simulation" as const, icon: Target, label: "Practica", color: "bg-[#0038A8]" },
-  { id: "quiz" as const, icon: HelpCircle, label: "Evaluar", color: "bg-[#CE1126]" },
+  { id: "training" as const, icon: BookOpen, label: "Capacitación", color: "bg-[#CE1126]" },
+  { id: "quiz" as const, icon: HelpCircle, label: "Evaluación", color: "bg-[#CE1126]" },
+  { id: "simulation" as const, icon: Target, label: "Simulación", color: "bg-[#0038A8]" },
   { id: "progress" as const, icon: BarChart3, label: "Progreso", color: "bg-[#0038A8]" },
   { id: "profile" as const, icon: UserCircle, label: "Mi Perfil", color: "bg-[#CE1126]" },
 ]
@@ -99,6 +99,18 @@ export function WebHeader({ activeModule, onNavigate, userName = "Usuario" }: We
               </button>
             )
           })}
+
+          {/* TRECK Acronym - Mobile */}
+          <div className="mt-4 pt-4 border-t border-border">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-2">¿Qué es TRECK?</p>
+            <div className="space-y-1.5 text-[11px] text-muted-foreground">
+              <div><span className="font-semibold text-foreground">T</span> - Tecnología</div>
+              <div><span className="font-semibold text-foreground">R</span> - Riesgo</div>
+              <div><span className="font-semibold text-foreground">E</span> - Educación</div>
+              <div><span className="font-semibold text-foreground">C</span> - Conciencia</div>
+              <div><span className="font-semibold text-foreground">K</span> - Know-how</div>
+            </div>
+          </div>
 
         </nav>
       )}
