@@ -100,18 +100,6 @@ export function WebHeader({ activeModule, onNavigate, userName = "Usuario" }: We
             )
           })}
 
-          {/* TRECK Acronym - Mobile */}
-          <div className="mt-4 pt-4 border-t border-border">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-2">¿Qué es TRECK?</p>
-            <div className="space-y-1.5 text-[11px] text-muted-foreground">
-              <div><span className="font-semibold text-foreground">T</span> - Tecnología</div>
-              <div><span className="font-semibold text-foreground">R</span> - Riesgo</div>
-              <div><span className="font-semibold text-foreground">E</span> - Educación</div>
-              <div><span className="font-semibold text-foreground">C</span> - Conciencia</div>
-              <div><span className="font-semibold text-foreground">K</span> - Know-how</div>
-            </div>
-          </div>
-
         </nav>
       )}
     </header>
