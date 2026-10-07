@@ -30,17 +30,15 @@ export interface EstadisticasProgreso {
 
 export async function obtenerEstadisticasProgreso(): Promise<EstadisticasProgreso> {
   try {
-    const [progresoCapacitaciones, respuestasSimulaciones, respuestasEvaluaciones, totalesSimulaciones, totalesEvaluaciones] =
+    const [progresoCapacitaciones, respuestasSimulaciones, respuestasEvaluaciones, totalesSimulaciones, totalesEvaluaciones, totalCapacitaciones] =
       await Promise.all([
         obtenerProgresoCapacitaciones(),
         obtenerRespuestasSimulaciones(),
         obtenerRespuestasEvaluaciones(),
         obtenerTotalSimulaciones(),
         obtenerTotalEvaluaciones(),
+        obtenerTotalCapacitaciones(),
       ])
-
-    // Calcular estadísticas de capacitaciones (DINÁMICAMENTE)
-    const totalCapacitaciones = await obtenerTotalCapacitaciones()
     const completadasCapacitaciones = progresoCapacitaciones.filter((p) => p.completada).length
     const porcentajeCapacitaciones = totalCapacitaciones > 0 ? Math.round((completadasCapacitaciones / totalCapacitaciones) * 100) : 0
 
@@ -180,7 +178,7 @@ async function obtenerTotalEvaluaciones() {
 
 async function obtenerTotalCapacitaciones() {
   try {
-    const endpoint = getApiUrl("/api/capacitaciones/")
+    const endpoint = getApiUrl("/api/capacitaciones/lecciones/")
     const response = await fetch(endpoint, {
       headers: buildAuthHeaders(),
       cache: "no-store",
@@ -193,7 +191,9 @@ async function obtenerTotalCapacitaciones() {
 
     const data = (await response.json()) as any[] | { results?: any[] }
     const lecciones = Array.isArray(data) ? data : data.results ?? []
-    return lecciones.filter((l) => l.activa).length || 6
+    // Contar solo lecciones activas
+    const leccionesActivas = lecciones.filter((l) => l.activa !== false)
+    return leccionesActivas.length || 6
   } catch (error) {
     console.error("Error obtieniendo total de capacitaciones:", error)
     return 6 // Default a 6 si falla
