@@ -178,7 +178,7 @@ async function obtenerTotalEvaluaciones() {
 
 async function obtenerTotalCapacitaciones() {
   try {
-    const endpoint = getApiUrl("/api/capacitaciones/lecciones/")
+    const endpoint = getApiUrl("/api/capacitaciones/")
     const response = await fetch(endpoint, {
       headers: buildAuthHeaders(),
       cache: "no-store",
@@ -191,9 +191,7 @@ async function obtenerTotalCapacitaciones() {
 
     const data = (await response.json()) as any[] | { results?: any[] }
     const lecciones = Array.isArray(data) ? data : data.results ?? []
-    // Contar solo lecciones activas
-    const leccionesActivas = lecciones.filter((l) => l.activa !== false)
-    return leccionesActivas.length || 6
+    return lecciones.filter((l) => l.activa).length || 6
   } catch (error) {
     console.error("Error obtieniendo total de capacitaciones:", error)
     return 6 // Default a 6 si falla
