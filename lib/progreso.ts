@@ -39,8 +39,8 @@ export async function obtenerEstadisticasProgreso(): Promise<EstadisticasProgres
         obtenerTotalEvaluaciones(),
       ])
 
-    // Calcular estadísticas de capacitaciones
-    const totalCapacitaciones = 6 // Asumiendo 6 lecciones como está en el seed
+    // Calcular estadísticas de capacitaciones (DINÁMICAMENTE)
+    const totalCapacitaciones = await obtenerTotalCapacitaciones()
     const completadasCapacitaciones = progresoCapacitaciones.filter((p) => p.completada).length
     const porcentajeCapacitaciones = totalCapacitaciones > 0 ? Math.round((completadasCapacitaciones / totalCapacitaciones) * 100) : 0
 
@@ -59,10 +59,11 @@ export async function obtenerEstadisticasProgreso(): Promise<EstadisticasProgres
     const totalEvaluacionesDisponibles = totalesEvaluaciones // Dinámico del backend
     const porcentajeEvaluaciones = totalEvaluacionesRespondidas > 0 ? Math.round((correctasEvaluaciones / totalEvaluacionesRespondidas) * 100) : 0
 
-    // Calcular progreso general (40% capacitaciones, 30% simulaciones, 30% evaluaciones)
-    // Nota: los porcentajes ya están entre 0-100, así que multiplicamos directamente
-    const progresoGeneral = Math.round(
-      porcentajeCapacitaciones * 0.4 + porcentajeSimulaciones * 0.3 + porcentajeEvaluaciones * 0.3
+    // Calcular progreso general (33% capacitaciones, 33% simulaciones, 33% evaluaciones)
+    // CAPPED a 100% máximo para evitar valores como 107%
+    const progresoGeneral = Math.min(
+      Math.round((porcentajeCapacitaciones + porcentajeSimulaciones + porcentajeEvaluaciones) / 3),
+      100
     )
 
     // Obtener fecha de última actividad
@@ -174,6 +175,28 @@ async function obtenerTotalEvaluaciones() {
   } catch (error) {
     console.error("Error obtieniendo total de evaluaciones:", error)
     return 4
+  }
+}
+
+async function obtenerTotalCapacitaciones() {
+  try {
+    const endpoint = getApiUrl("/api/capacitaciones/")
+    const response = await fetch(endpoint, {
+      headers: buildAuthHeaders(),
+      cache: "no-store",
+    })
+
+    if (!response.ok) {
+      console.error("Error obteniendo total de capacitaciones:", response.status)
+      return 6 // Default a 6 si falla
+    }
+
+    const data = (await response.json()) as any[] | { results?: any[] }
+    const lecciones = Array.isArray(data) ? data : data.results ?? []
+    return lecciones.filter((l) => l.activa).length || 6
+  } catch (error) {
+    console.error("Error obtieniendo total de capacitaciones:", error)
+    return 6 // Default a 6 si falla
   }
 }
 
