@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode, type SyntheticEvent } from "react"
 import { useRouter } from "next/navigation"
-import { Shield, Eye, EyeOff, Lock, ArrowRight, UserPlus, Mail, Check, X } from "lucide-react"
+import { Shield, Eye, EyeOff, Lock, ArrowRight, UserPlus, Mail, Check, X, Mail as MailIcon } from "lucide-react"
 import { ParaguayFlag, ParaguayFlagBanner } from "@/components/paraguay-flag"
 import { cn } from "@/lib/utils"
 import { AuthApiError, clearAuthSession, loginWithApi, registerWithApi, saveAuthSession } from "@/lib/auth"
@@ -88,6 +88,7 @@ export function LoginScreen() {
   const [form, setForm] = useState({ username: "", email: "", password: "", confirm: "" })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [serverMessage, setServerMessage] = useState<string | null>(null)
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false)
 
   const validate = () => {
     const next: Record<string, string> = {}
@@ -374,7 +375,11 @@ export function LoginScreen() {
 
                   {mode === "login" && (
                     <div className="flex justify-end">
-                      <button type="button" className="text-xs text-[#0038A8] hover:underline">
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPasswordModal(true)}
+                        className="text-xs text-[#0038A8] hover:underline"
+                      >
                         Olvidé mi contraseña
                       </button>
                     </div>
@@ -417,6 +422,50 @@ export function LoginScreen() {
           <div className="flex-1 bg-[#0038A8]" />
         </div>
       </div>
+
+      {showForgotPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-card border border-border rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="bg-gradient-to-r from-[#0038A8] to-[#002d8a] px-6 py-4">
+              <h3 className="text-lg font-bold text-white">Recuperar Contraseña</h3>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="rounded-lg bg-[#0038A8]/5 border border-[#0038A8]/20 p-4 space-y-3">
+                <p className="text-sm text-foreground">
+                  Para recuperar tu contraseña, comunícate con el administrador de TRECK. El equipo de soporte está disponible para ayudarte a restablecer tu acceso.
+                </p>
+
+                <div className="border-t border-border pt-3 space-y-2">
+                  <div className="flex items-start gap-3">
+                    <MailIcon className="w-5 h-5 text-[#0038A8] flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Correo de Soporte</p>
+                      <p className="text-sm text-foreground font-medium">soporte@treck.edu.py</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                <p className="text-xs text-amber-900 dark:text-amber-100">
+                  💡 Proporciona tu nombre de usuario y correo registrado para que el administrador pueda verificar tu identidad.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowForgotPasswordModal(false)}
+                className={cn(
+                  "w-full py-2.5 px-4 rounded-lg font-medium text-sm transition-all duration-200",
+                  "bg-[#0038A8] hover:bg-[#002d8a] text-white active:scale-[0.98]",
+                )}
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
