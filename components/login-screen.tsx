@@ -441,7 +441,7 @@ export function LoginScreen() {
                     <MailIcon className="w-5 h-5 text-[#0038A8] flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="text-xs font-medium text-muted-foreground">Correo de Soporte</p>
-                      <p className="text-sm text-foreground font-medium">soporte@treck.edu.py</p>
+                      <p className="text-sm text-foreground font-medium">Federicotraversi419@hotmail.com</p>
                     </div>
                   </div>
                 </div>
