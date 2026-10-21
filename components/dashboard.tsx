@@ -52,7 +52,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
       title: "Capacitación",
       description: "Aprende a identificar diferentes tipos de phishing con lecciones interactivas",
       color: "bg-[#0038A8]",
-      stats: `${stats?.capacitaciones.total ?? 6} lecciones`,
+      stats: `${loading ? "Cargando..." : `${stats?.capacitaciones.total ?? 0} lecciones`}`,
     },
     {
       id: "simulation" as const,
@@ -60,7 +60,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
       title: "Simulación",
       description: "Practica con ejemplos reales de phishing contextualizados a Paraguay",
       color: "bg-[#CE1126]",
-      stats: "10-20 escenarios",
+      stats: `${loading ? "Cargando..." : `${stats?.simulaciones.total ?? 0} escenarios`}`,
     },
     {
       id: "quiz" as const,
@@ -68,7 +68,7 @@ export function Dashboard({ onNavigate, session }: Readonly<DashboardProps>) {
       title: "Evaluación",
       description: "Pon a prueba tu conocimiento con preguntas de opción múltiple",
       color: "bg-[#0038A8]",
-      stats: `${stats?.evaluaciones.total ?? 4} preguntas`,
+      stats: `${loading ? "Cargando..." : `${stats?.evaluaciones.total ?? 0} preguntas`}`,
     },
     {
       id: "progress" as const,

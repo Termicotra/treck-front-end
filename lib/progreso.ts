@@ -138,9 +138,10 @@ async function obtenerRespuestasEvaluaciones() {
 
 async function obtenerTotalSimulaciones() {
   try {
-    const endpoint = getApiUrl("/api/simulaciones/totales/")
+    const endpoint = getApiUrl("/api/simulaciones/")
     const response = await fetch(endpoint, {
       cache: "no-store",
+      next: { revalidate: 0 },
     })
 
     if (!response.ok) {
@@ -148,8 +149,9 @@ async function obtenerTotalSimulaciones() {
       return 0
     }
 
-    const data = (await response.json()) as { total: number }
-    return data.total ?? 0
+    const data = (await response.json()) as any[] | { results?: any[] }
+    const simulaciones = Array.isArray(data) ? data : data.results ?? []
+    return simulaciones.length || 0
   } catch (error) {
     console.error("Error obtieniendo total de simulaciones:", error)
     return 0
@@ -158,43 +160,53 @@ async function obtenerTotalSimulaciones() {
 
 async function obtenerTotalEvaluaciones() {
   try {
-    const endpoint = getApiUrl("/api/evaluaciones/totales/")
+    const endpoint = getApiUrl("/api/evaluaciones/")
     const response = await fetch(endpoint, {
       cache: "no-store",
+      next: { revalidate: 0 },
     })
 
     if (!response.ok) {
       console.error("Error obteniendo total de evaluaciones:", response.status)
-      return 4 // Default a 4 si falla
+      return 0
     }
 
-    const data = (await response.json()) as { total: number }
-    return data.total ?? 4
+    const data = (await response.json()) as any[] | { results?: any[] }
+    const evaluaciones = Array.isArray(data) ? data : data.results ?? []
+    return evaluaciones.length || 0
   } catch (error) {
     console.error("Error obtieniendo total de evaluaciones:", error)
-    return 4
+    return 0
   }
 }
 
 async function obtenerTotalCapacitaciones() {
   try {
-    const endpoint = getApiUrl("/api/capacitaciones/")
+    const endpoint = getApiUrl("/api/capacitaciones/lecciones/")
     const response = await fetch(endpoint, {
       headers: buildAuthHeaders(),
       cache: "no-store",
+      next: { revalidate: 0 },
     })
 
     if (!response.ok) {
       console.error("Error obteniendo total de capacitaciones:", response.status)
-      return 6 // Default a 6 si falla
+      return 0
     }
 
     const data = (await response.json()) as any[] | { results?: any[] }
     const lecciones = Array.isArray(data) ? data : data.results ?? []
-    return lecciones.filter((l) => l.activa).length || 6
+    const total = lecciones.length
+
+    if (total === 0) {
+      console.warn("No se encontraron lecciones activas")
+      return 0
+    }
+
+    return total
   } catch (error) {
     console.error("Error obtieniendo total de capacitaciones:", error)
-    return 6 // Default a 6 si falla
+    return 0
   }
 }
 
