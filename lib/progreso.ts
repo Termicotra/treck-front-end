@@ -160,8 +160,9 @@ async function obtenerTotalSimulaciones() {
 
 async function obtenerTotalEvaluaciones() {
   try {
-    const endpoint = getApiUrl("/api/evaluaciones/")
+    const endpoint = getApiUrl("/api/evaluaciones/ejercicios/")
     const response = await fetch(endpoint, {
+      headers: buildAuthHeaders(),
       cache: "no-store",
       next: { revalidate: 0 },
     })
@@ -173,7 +174,14 @@ async function obtenerTotalEvaluaciones() {
 
     const data = (await response.json()) as any[] | { results?: any[] }
     const evaluaciones = Array.isArray(data) ? data : data.results ?? []
-    return evaluaciones.length || 0
+    const total = evaluaciones.length
+
+    if (total === 0) {
+      console.warn("No se encontraron ejercicios disponibles")
+      return 0
+    }
+
+    return total
   } catch (error) {
     console.error("Error obtieniendo total de evaluaciones:", error)
     return 0
