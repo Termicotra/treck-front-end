@@ -132,18 +132,7 @@ function pickRecentUniqueSimulations(items: SimulationApiItem[]) {
   const selectedCount = determinateSelectedCount(totalSimulations)
 
   const sortedItems = sortNewestFirstApi(items)
-  const usedArticles = new Set<number | null>()
-  const selectedItems: SimulationApiItem[] = []
-
-  for (const item of sortedItems) {
-    if (selectedItems.length >= selectedCount) break
-
-    const articleKey = item.articulo ?? null
-    if (!usedArticles.has(articleKey)) {
-      selectedItems.push(item)
-      usedArticles.add(articleKey)
-    }
-  }
+  const selectedItems = sortedItems.slice(0, selectedCount)
 
   return shuffleItems(selectedItems)
 }
