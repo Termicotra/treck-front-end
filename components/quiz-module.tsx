@@ -598,7 +598,7 @@ export function QuizModule({ onBack }: Readonly<QuizModuleProps>) {
               </div>
               <div className="hidden md:block text-right">
                 <p className="text-2xl font-bold">
-                  {estadisticasGlobales?.ejercicios_respondidos ?? 0}/4
+                  {estadisticasGlobales?.ejercicios_respondidos ?? 0}/{estadisticasGlobales?.total_ejercicios ?? 0}
                 </p>
                 <p className="text-xs opacity-80">Completadas</p>
               </div>
@@ -610,7 +610,7 @@ export function QuizModule({ onBack }: Readonly<QuizModuleProps>) {
                   Pregunta {currentIndex + 1} de {exercises.length}
                 </span>
                 <span className="font-semibold md:hidden">
-                  {estadisticasGlobales?.ejercicios_respondidos ?? 0}/4 completadas
+                  {estadisticasGlobales?.ejercicios_respondidos ?? 0}/{estadisticasGlobales?.total_ejercicios ?? 0} completadas
                 </span>
               </div>
               <Progress value={progress} className="h-2.5 bg-white/20" />
