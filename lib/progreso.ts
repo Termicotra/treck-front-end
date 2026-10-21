@@ -91,7 +91,7 @@ export async function obtenerEstadisticasProgreso(): Promise<EstadisticasProgres
         porcentaje: porcentajeCapacitaciones,
       },
       simulaciones: {
-        total: totalSimulacionesRespondidas,
+        total: totalesSimulaciones,
         correctas: correctasSimulaciones,
         incorrectas: incorrectasSimulaciones,
         porcentaje: porcentajeSimulaciones,
@@ -140,18 +140,26 @@ async function obtenerTotalSimulaciones() {
   try {
     const endpoint = getApiUrl("/api/simulaciones/")
     const response = await fetch(endpoint, {
+      headers: buildAuthHeaders(),
       cache: "no-store",
       next: { revalidate: 0 },
     })
 
     if (!response.ok) {
-      console.error("Error obteniendo total de simulaciones:", response.status)
+      console.error("Error obteniendo total de simulaciones:", response.status, response.statusText)
       return 0
     }
 
     const data = (await response.json()) as any[] | { results?: any[] }
     const simulaciones = Array.isArray(data) ? data : data.results ?? []
-    return simulaciones.length || 0
+    const total = simulaciones.length
+
+    if (total === 0) {
+      console.warn("No se encontraron simulaciones disponibles")
+      return 0
+    }
+
+    return total
   } catch (error) {
     console.error("Error obtieniendo total de simulaciones:", error)
     return 0
