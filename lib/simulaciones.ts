@@ -13,6 +13,7 @@ export interface ProgresoSimulacion {
 const SIMULACIONES_ENDPOINT = getApiUrl("/api/simulaciones/")
 const RESPUESTAS_SIMULACIONES_ENDPOINT = getApiUrl("/api/simulaciones/mis-respuestas/")
 const SIMULACIONES_PARA_USUARIO_ENDPOINT = getApiUrl("/api/simulaciones/para-usuario/")
+const REINICIAR_SIMULACIONES_ENDPOINT = getApiUrl("/api/simulaciones/reiniciar/")
 
 export async function obtenerRespuestasSimulaciones(): Promise<ProgresoSimulacion[]> {
   const response = await fetch(RESPUESTAS_SIMULACIONES_ENDPOINT, {
@@ -28,13 +29,15 @@ export async function obtenerRespuestasSimulaciones(): Promise<ProgresoSimulacio
   return Array.isArray(data) ? data : data.results ?? []
 }
 
-export interface CupoSimulaciones<T> {
+export interface RondaSimulaciones<T> {
   total_disponibles: number
-  cantidad_mostrada: number
+  cantidad_ronda: number
+  respondidas: number
+  correctas: number
   simulaciones: T[]
 }
 
-export async function obtenerSimulacionesParaUsuario<T>(): Promise<CupoSimulaciones<T>> {
+export async function obtenerSimulacionesParaUsuario<T>(): Promise<RondaSimulaciones<T>> {
   const response = await fetch(SIMULACIONES_PARA_USUARIO_ENDPOINT, {
     headers: buildAuthHeaders(),
     cache: "no-store",
@@ -44,7 +47,18 @@ export async function obtenerSimulacionesParaUsuario<T>(): Promise<CupoSimulacio
     throw new Error("No se pudieron cargar las simulaciones.")
   }
 
-  return (await response.json()) as CupoSimulaciones<T>
+  return (await response.json()) as RondaSimulaciones<T>
+}
+
+export async function reiniciarSimulaciones(): Promise<void> {
+  const response = await fetch(REINICIAR_SIMULACIONES_ENDPOINT, {
+    method: "POST",
+    headers: buildAuthHeaders(),
+  })
+
+  if (!response.ok) {
+    throw new Error("No se pudo reiniciar la práctica.")
+  }
 }
 
 export async function registrarRespuestaSimulacion(

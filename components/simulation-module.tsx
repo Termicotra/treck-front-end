@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { ArrowLeft, Target, Mail, MessageSquare, AlertTriangle, CheckCircle, XCircle, RefreshCw, ShieldAlert, ShieldCheck } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ParaguayFlagBanner } from "@/components/paraguay-flag"
 import { cn } from "@/lib/utils"
-import { obtenerSimulacionesParaUsuario, registrarRespuestaSimulacion } from "@/lib/simulaciones"
+import { obtenerSimulacionesParaUsuario, registrarRespuestaSimulacion, reiniciarSimulaciones } from "@/lib/simulaciones"
 
 interface SimulationModuleProps {
   onBack: () => void
@@ -110,6 +110,7 @@ function getProgressDotClass(index: number, currentIndex: number) {
 
 export function SimulationModule({ onBack }: Readonly<SimulationModuleProps>) {
   const [simulations, setSimulations] = useState<DisplaySimulation[]>([])
+  const [ronda, setRonda] = useState({ cantidad: 0, respondidas: 0, correctas: 0 })
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null)
   const [showResult, setShowResult] = useState(false)
@@ -117,36 +118,31 @@ export function SimulationModule({ onBack }: Readonly<SimulationModuleProps>) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let active = true
+  // El backend decide las simulaciones pendientes de la ronda y el progreso ya registrado
+  const cargarSimulaciones = useCallback(async () => {
+    setLoading(true)
+    setError(null)
 
-    const loadSimulations = async () => {
-      setLoading(true)
-      setError(null)
+    try {
+      const data = await obtenerSimulacionesParaUsuario<SimulationApiItem>()
 
-      try {
-        // El backend decide qué simulaciones corresponden al usuario (no respondidas primero)
-        const cupo = await obtenerSimulacionesParaUsuario<SimulationApiItem>()
-
-        if (!active) return
-
-        setSimulations(shuffleItems(cupo.simulaciones).map(normalizeSimulation))
-        setCurrentIndex(0)
-      } catch (loadError) {
-        if (!active) return
-        setError(loadError instanceof Error ? loadError.message : "No se pudieron cargar las simulaciones.")
-        setSimulations([])
-      } finally {
-        if (active) setLoading(false)
-      }
-    }
-
-    void loadSimulations()
-
-    return () => {
-      active = false
+      setSimulations(shuffleItems(data.simulaciones).map(normalizeSimulation))
+      setRonda({ cantidad: data.cantidad_ronda, respondidas: data.respondidas, correctas: data.correctas })
+      setScore({ correct: data.correctas, total: data.respondidas })
+      setCurrentIndex(0)
+      setSelectedAnswer(null)
+      setShowResult(false)
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "No se pudieron cargar las simulaciones.")
+      setSimulations([])
+    } finally {
+      setLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    void cargarSimulaciones()
+  }, [cargarSimulaciones])
 
   const current = simulations[currentIndex] ?? null
 
@@ -184,11 +180,19 @@ export function SimulationModule({ onBack }: Readonly<SimulationModuleProps>) {
     }
   }
 
-  const handleRestart = () => {
-    setCurrentIndex(0)
-    setSelectedAnswer(null)
-    setShowResult(false)
-    setScore({ correct: 0, total: 0 })
+  // Al terminar la ronda se vuelve a consultar al servidor para mostrar la puntuación final
+  const handleVerPuntuacion = () => {
+    void cargarSimulaciones()
+  }
+
+  const handleReiniciar = async () => {
+    try {
+      await reiniciarSimulaciones()
+      await cargarSimulaciones()
+    } catch (restartError) {
+      setError(restartError instanceof Error ? restartError.message : "No se pudo reiniciar la práctica.")
+      setLoading(false)
+    }
   }
 
   const isCorrect = current ? selectedAnswer === current.isPhishing : false
@@ -219,6 +223,28 @@ export function SimulationModule({ onBack }: Readonly<SimulationModuleProps>) {
   }
 
   if (!current) {
+    // Ronda completada: mostrar puntuación y opción de reiniciar, como en evaluaciones
+    if (ronda.cantidad > 0) {
+      const porcentaje = Math.round((ronda.correctas / ronda.cantidad) * 100)
+      return (
+        <div className="min-h-full flex items-center justify-center p-6">
+          <Card className="w-full max-w-xl border-2 border-[#0038A8]/20">
+            <CardContent className="p-6 space-y-4 text-center">
+              <h2 className="text-lg font-bold text-foreground">Práctica completada</h2>
+              <p className="text-4xl font-bold text-foreground">
+                {ronda.correctas}/{ronda.cantidad}
+              </p>
+              <p className="text-sm text-muted-foreground">Respuestas correctas ({porcentaje}%)</p>
+              <Button className="bg-[#0038A8] hover:bg-[#0038A8]/90 text-white" onClick={handleReiniciar}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Reiniciar práctica
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )
+    }
+
     return (
       <div className="min-h-full flex items-center justify-center p-6">
         <Card className="w-full max-w-xl">
@@ -258,7 +284,7 @@ export function SimulationModule({ onBack }: Readonly<SimulationModuleProps>) {
 
           <div className="mt-4 flex items-center justify-between">
             <span className="text-sm opacity-80">
-              Simulación {currentIndex + 1} de {simulations.length}
+              Simulación {ronda.respondidas + currentIndex + 1} de {ronda.cantidad}
             </span>
             <span className="text-sm font-semibold md:hidden">
               Aciertos: {score.correct}/{score.total}
@@ -444,9 +470,8 @@ export function SimulationModule({ onBack }: Readonly<SimulationModuleProps>) {
                         Siguiente ejemplo
                       </Button>
                     ) : (
-                      <Button className="w-full bg-[#0038A8] hover:bg-[#0038A8]/90 text-white" onClick={handleRestart}>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Reiniciar practica
+                      <Button className="w-full bg-[#0038A8] hover:bg-[#0038A8]/90 text-white" onClick={handleVerPuntuacion}>
+                        Ver puntuación
                       </Button>
                     )}
                   </div>

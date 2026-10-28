@@ -44,8 +44,8 @@ export async function obtenerEstadisticasProgreso(): Promise<EstadisticasProgres
     const completadasCapacitaciones = progresoCapacitaciones.filter((p) => p.completada).length
     const porcentajeCapacitaciones = totalCapacitaciones > 0 ? Math.round((completadasCapacitaciones / totalCapacitaciones) * 100) : 0
 
-    // Avance en simulaciones sobre el cupo mostrado al usuario (cantidad_mostrada del backend).
-    // Solo cuentan las primeras N respuestas del cupo, así nunca se pasa aunque el catálogo crezca.
+    // Avance en simulaciones sobre la ronda actual (cantidad_ronda del backend).
+    // Reiniciar la práctica borra las respuestas anteriores, así que solo cuentan las de la ronda en curso.
     const respuestasCupo = [...respuestasSimulaciones]
       .sort((a, b) => Date.parse(a.fecha_respuesta) - Date.parse(b.fecha_respuesta))
       .slice(0, totalesSimulaciones)
@@ -148,8 +148,8 @@ async function obtenerRespuestasEvaluaciones() {
 
 async function obtenerCupoSimulaciones(): Promise<number> {
   try {
-    const { cantidad_mostrada } = await obtenerSimulacionesParaUsuario()
-    return cantidad_mostrada
+    const { cantidad_ronda } = await obtenerSimulacionesParaUsuario()
+    return cantidad_ronda
   } catch (error) {
     console.error("Error obteniendo cupo de simulaciones:", error)
     return 0
