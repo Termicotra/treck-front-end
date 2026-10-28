@@ -12,6 +12,7 @@ export interface ProgresoSimulacion {
 
 const SIMULACIONES_ENDPOINT = getApiUrl("/api/simulaciones/")
 const RESPUESTAS_SIMULACIONES_ENDPOINT = getApiUrl("/api/simulaciones/mis-respuestas/")
+const SIMULACIONES_PARA_USUARIO_ENDPOINT = getApiUrl("/api/simulaciones/para-usuario/")
 
 export async function obtenerRespuestasSimulaciones(): Promise<ProgresoSimulacion[]> {
   const response = await fetch(RESPUESTAS_SIMULACIONES_ENDPOINT, {
@@ -25,6 +26,25 @@ export async function obtenerRespuestasSimulaciones(): Promise<ProgresoSimulacio
 
   const data = (await response.json()) as ProgresoSimulacion[] | { results?: ProgresoSimulacion[] }
   return Array.isArray(data) ? data : data.results ?? []
+}
+
+export interface CupoSimulaciones<T> {
+  total_disponibles: number
+  cantidad_mostrada: number
+  simulaciones: T[]
+}
+
+export async function obtenerSimulacionesParaUsuario<T>(): Promise<CupoSimulaciones<T>> {
+  const response = await fetch(SIMULACIONES_PARA_USUARIO_ENDPOINT, {
+    headers: buildAuthHeaders(),
+    cache: "no-store",
+  })
+
+  if (!response.ok) {
+    throw new Error("No se pudieron cargar las simulaciones.")
+  }
+
+  return (await response.json()) as CupoSimulaciones<T>
 }
 
 export async function registrarRespuestaSimulacion(

@@ -1,6 +1,6 @@
 import { buildAuthHeaders, getApiUrl } from "@/lib/auth"
 import { obtenerProgreso as obtenerProgresoCapacitaciones } from "@/lib/capacitaciones"
-import { obtenerRespuestasSimulaciones } from "@/lib/simulaciones"
+import { obtenerRespuestasSimulaciones, obtenerSimulacionesParaUsuario } from "@/lib/simulaciones"
 
 export interface EstadisticasProgreso {
   capacitaciones: {
@@ -37,19 +37,22 @@ export async function obtenerEstadisticasProgreso(): Promise<EstadisticasProgres
         obtenerProgresoCapacitaciones(),
         obtenerRespuestasSimulaciones(),
         obtenerRespuestasEvaluaciones(),
-        obtenerTotalSimulaciones(),
+        obtenerCupoSimulaciones(),
         obtenerIdsEvaluacionesActivas(),
         obtenerTotalCapacitaciones(),
       ])
     const completadasCapacitaciones = progresoCapacitaciones.filter((p) => p.completada).length
     const porcentajeCapacitaciones = totalCapacitaciones > 0 ? Math.round((completadasCapacitaciones / totalCapacitaciones) * 100) : 0
 
-    // Avance en simulaciones: simulaciones respondidas sobre simulaciones disponibles
-    // RespuestaSimulacion es única por usuario y simulación, así que cada fila es una simulación distinta
-    const correctasSimulaciones = respuestasSimulaciones.filter((r: any) => r.es_correcta).length
-    const incorrectasSimulaciones = respuestasSimulaciones.filter((r: any) => !r.es_correcta).length
-    const respondidasSimulaciones = respuestasSimulaciones.length
-    const porcentajeSimulaciones = totalesSimulaciones > 0 ? Math.min(Math.round((respondidasSimulaciones / totalesSimulaciones) * 100), 100) : 0
+    // Avance en simulaciones sobre el cupo mostrado al usuario (cantidad_mostrada del backend).
+    // Solo cuentan las primeras N respuestas del cupo, así nunca se pasa aunque el catálogo crezca.
+    const respuestasCupo = [...respuestasSimulaciones]
+      .sort((a, b) => Date.parse(a.fecha_respuesta) - Date.parse(b.fecha_respuesta))
+      .slice(0, totalesSimulaciones)
+    const correctasSimulaciones = respuestasCupo.filter((r) => r.es_correcta).length
+    const incorrectasSimulaciones = respuestasCupo.length - correctasSimulaciones
+    const respondidasSimulaciones = respuestasCupo.length
+    const porcentajeSimulaciones = totalesSimulaciones > 0 ? Math.round((respondidasSimulaciones / totalesSimulaciones) * 100) : 0
 
     // Avance en evaluaciones: ejercicios activos respondidos sobre ejercicios activos disponibles
     // /respuestas/ devuelve solo la última respuesta por ejercicio, así que cada fila es un ejercicio distinto
@@ -143,32 +146,12 @@ async function obtenerRespuestasEvaluaciones() {
   }
 }
 
-async function obtenerTotalSimulaciones() {
+async function obtenerCupoSimulaciones(): Promise<number> {
   try {
-    const endpoint = getApiUrl("/api/simulaciones/")
-    const response = await fetch(endpoint, {
-      headers: buildAuthHeaders(),
-      cache: "no-store",
-      next: { revalidate: 0 },
-    })
-
-    if (!response.ok) {
-      console.error("Error obteniendo total de simulaciones:", response.status, response.statusText)
-      return 0
-    }
-
-    const data = (await response.json()) as any[] | { results?: any[] }
-    const simulaciones = Array.isArray(data) ? data : data.results ?? []
-    const total = simulaciones.length
-
-    if (total === 0) {
-      console.warn("No se encontraron simulaciones disponibles")
-      return 0
-    }
-
-    return total
+    const { cantidad_mostrada } = await obtenerSimulacionesParaUsuario()
+    return cantidad_mostrada
   } catch (error) {
-    console.error("Error obtieniendo total de simulaciones:", error)
+    console.error("Error obteniendo cupo de simulaciones:", error)
     return 0
   }
 }

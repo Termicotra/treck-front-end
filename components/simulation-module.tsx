@@ -6,8 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ParaguayFlagBanner } from "@/components/paraguay-flag"
 import { cn } from "@/lib/utils"
-import { buildAuthHeaders, getApiUrl } from "@/lib/auth"
-import { registrarRespuestaSimulacion } from "@/lib/simulaciones"
+import { obtenerSimulacionesParaUsuario, registrarRespuestaSimulacion } from "@/lib/simulaciones"
 
 interface SimulationModuleProps {
   onBack: () => void
@@ -58,8 +57,6 @@ type DisplaySimulation = {
   createdAt: string | null
 }
 
-const SIMULATIONS_ENDPOINT = getApiUrl("/api/simulaciones/")
-
 function normalizeSimulation(item: SimulationApiItem): DisplaySimulation {
   const type = item.tipo_mensaje?.toLowerCase() === "whatsapp" ? "whatsapp" : "email"
   const attachments = Array.isArray(item.attachments) ? item.attachments.filter((attachment) => typeof attachment === "string") : []
@@ -86,22 +83,6 @@ function normalizeSimulation(item: SimulationApiItem): DisplaySimulation {
   }
 }
 
-function sortNewestFirst(items: DisplaySimulation[]) {
-  return [...items].sort((left, right) => {
-    const leftTime = left.createdAt ? Date.parse(left.createdAt) : 0
-    const rightTime = right.createdAt ? Date.parse(right.createdAt) : 0
-    return rightTime - leftTime
-  })
-}
-
-function sortNewestFirstApi(items: SimulationApiItem[]) {
-  return [...items].sort((left, right) => {
-    const leftTime = left.fecha_creacion ? Date.parse(left.fecha_creacion) : 0
-    const rightTime = right.fecha_creacion ? Date.parse(right.fecha_creacion) : 0
-    return rightTime - leftTime
-  })
-}
-
 function shuffleItems<T>(items: T[]) {
   const shuffled = [...items]
 
@@ -119,22 +100,6 @@ function getRandomIndex(maxExclusive: number) {
   const randomValues = new Uint32Array(1)
   crypto.getRandomValues(randomValues)
   return randomValues[0] % maxExclusive
-}
-
-function determinateSelectedCount(totalSimulations: number): number {
-  if (totalSimulations >= 20) return 20
-  if (totalSimulations >= 15) return 15
-  return totalSimulations
-}
-
-function pickRecentUniqueSimulations(items: SimulationApiItem[]) {
-  const totalSimulations = items.length
-  const selectedCount = determinateSelectedCount(totalSimulations)
-
-  const sortedItems = sortNewestFirstApi(items)
-  const selectedItems = sortedItems.slice(0, selectedCount)
-
-  return shuffleItems(selectedItems)
 }
 
 function getProgressDotClass(index: number, currentIndex: number) {
@@ -160,22 +125,12 @@ export function SimulationModule({ onBack }: Readonly<SimulationModuleProps>) {
       setError(null)
 
       try {
-        const response = await fetch(SIMULATIONS_ENDPOINT, {
-          headers: buildAuthHeaders(),
-          cache: "no-store",
-        })
-
-        if (!response.ok) {
-          throw new Error("No se pudieron cargar las simulaciones.")
-        }
-
-        const payload = (await response.json()) as SimulationApiItem[] | { results?: SimulationApiItem[] }
-        const items = Array.isArray(payload) ? payload : payload.results ?? []
+        // El backend decide qué simulaciones corresponden al usuario (no respondidas primero)
+        const cupo = await obtenerSimulacionesParaUsuario<SimulationApiItem>()
 
         if (!active) return
 
-        const selectedItems = pickRecentUniqueSimulations(items)
-        setSimulations(selectedItems.map(normalizeSimulation))
+        setSimulations(shuffleItems(cupo.simulaciones).map(normalizeSimulation))
         setCurrentIndex(0)
       } catch (loadError) {
         if (!active) return
