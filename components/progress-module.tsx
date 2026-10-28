@@ -93,14 +93,14 @@ export function ProgressModule({ onBack }: ProgressModuleProps) {
       icon: Target,
       title: "Simulaciones",
       progress: stats.simulaciones.porcentaje,
-      detail: `${stats.simulaciones.correctas} correctas de ${stats.simulaciones.total}`,
+      detail: `${stats.simulaciones.respondidas} respondidas de ${stats.simulaciones.total} (${stats.simulaciones.correctas} correctas)`,
       color: "bg-[#CE1126]",
     },
     {
       icon: Award,
       title: "Evaluaciones",
       progress: stats.evaluaciones.porcentaje,
-      detail: `${stats.evaluaciones.correctas} correctas de ${stats.evaluaciones.total}`,
+      detail: `${stats.evaluaciones.respondidas} respondidas de ${stats.evaluaciones.total} (${stats.evaluaciones.correctas} correctas)`,
       color: "bg-[#0038A8]",
     },
   ]
@@ -165,7 +165,7 @@ export function ProgressModule({ onBack }: ProgressModuleProps) {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">
-                    {stats.evaluaciones.total > 0 ? Math.round((stats.evaluaciones.correctas / stats.evaluaciones.total) * 100) : 0}%
+                    {stats.evaluaciones.respondidas > 0 ? Math.round((stats.evaluaciones.correctas / stats.evaluaciones.respondidas) * 100) : 0}%
                   </p>
                   <p className="text-xs text-muted-foreground">Puntaje promedio</p>
                 </div>

@@ -10,12 +10,14 @@ export interface EstadisticasProgreso {
   }
   simulaciones: {
     total: number
+    respondidas: number
     correctas: number
     incorrectas: number
     porcentaje: number
   }
   evaluaciones: {
     total: number
+    respondidas: number
     correctas: number
     incorrectas: number
     porcentaje: number
@@ -30,34 +32,37 @@ export interface EstadisticasProgreso {
 
 export async function obtenerEstadisticasProgreso(): Promise<EstadisticasProgreso> {
   try {
-    const [progresoCapacitaciones, respuestasSimulaciones, respuestasEvaluaciones, totalesSimulaciones, totalesEvaluaciones, totalCapacitaciones] =
+    const [progresoCapacitaciones, respuestasSimulaciones, respuestasEvaluaciones, totalesSimulaciones, idsEvaluacionesActivas, totalCapacitaciones] =
       await Promise.all([
         obtenerProgresoCapacitaciones(),
         obtenerRespuestasSimulaciones(),
         obtenerRespuestasEvaluaciones(),
         obtenerTotalSimulaciones(),
-        obtenerTotalEvaluaciones(),
+        obtenerIdsEvaluacionesActivas(),
         obtenerTotalCapacitaciones(),
       ])
     const completadasCapacitaciones = progresoCapacitaciones.filter((p) => p.completada).length
     const porcentajeCapacitaciones = totalCapacitaciones > 0 ? Math.round((completadasCapacitaciones / totalCapacitaciones) * 100) : 0
 
-    // Calcular estadísticas de simulaciones
-    // El porcentaje se calcula sobre respuestas correctas vs respuestas totales del usuario
+    // Avance en simulaciones: simulaciones respondidas sobre simulaciones disponibles
+    // RespuestaSimulacion es única por usuario y simulación, así que cada fila es una simulación distinta
     const correctasSimulaciones = respuestasSimulaciones.filter((r: any) => r.es_correcta).length
     const incorrectasSimulaciones = respuestasSimulaciones.filter((r: any) => !r.es_correcta).length
-    const totalSimulacionesRespondidas = respuestasSimulaciones.length
-    const porcentajeSimulaciones = totalSimulacionesRespondidas > 0 ? Math.round((correctasSimulaciones / totalSimulacionesRespondidas) * 100) : 0
+    const respondidasSimulaciones = respuestasSimulaciones.length
+    const porcentajeSimulaciones = totalesSimulaciones > 0 ? Math.min(Math.round((respondidasSimulaciones / totalesSimulaciones) * 100), 100) : 0
 
-    // Calcular estadísticas de evaluaciones
-    // El porcentaje se calcula sobre respuestas correctas vs respuestas totales del usuario
-    const correctasEvaluaciones = respuestasEvaluaciones.filter((r: any) => r.es_correcta).length
-    const incorrectasEvaluaciones = respuestasEvaluaciones.filter((r: any) => !r.es_correcta).length
-    const totalEvaluacionesRespondidas = respuestasEvaluaciones.length
-    const totalEvaluacionesDisponibles = totalesEvaluaciones // Dinámico del backend
-    const porcentajeEvaluaciones = totalEvaluacionesRespondidas > 0 ? Math.round((correctasEvaluaciones / totalEvaluacionesRespondidas) * 100) : 0
+    // Avance en evaluaciones: ejercicios activos respondidos sobre ejercicios activos disponibles
+    // /respuestas/ devuelve solo la última respuesta por ejercicio, así que cada fila es un ejercicio distinto
+    const ejerciciosActivos = new Set(idsEvaluacionesActivas)
+    const respuestasEvaluacionesActivas = respuestasEvaluaciones.filter((r: any) => ejerciciosActivos.has(r.ejercicio))
+    const correctasEvaluaciones = respuestasEvaluacionesActivas.filter((r: any) => r.es_correcta).length
+    const incorrectasEvaluaciones = respuestasEvaluacionesActivas.filter((r: any) => !r.es_correcta).length
+    const respondidasEvaluaciones = respuestasEvaluacionesActivas.length
+    const totalEvaluacionesDisponibles = idsEvaluacionesActivas.length
+    const porcentajeEvaluaciones = totalEvaluacionesDisponibles > 0 ? Math.min(Math.round((respondidasEvaluaciones / totalEvaluacionesDisponibles) * 100), 100) : 0
 
-    // Calcular progreso general (33% capacitaciones, 33% simulaciones, 33% evaluaciones)
+    // Progreso general (33% capacitaciones, 33% simulaciones, 33% evaluaciones)
+    // Los tres módulos miden avance sobre su contenido disponible
     // CAPPED a 100% máximo para evitar valores como 107%
     const progresoGeneral = Math.min(
       Math.round((porcentajeCapacitaciones + porcentajeSimulaciones + porcentajeEvaluaciones) / 3),
@@ -92,12 +97,14 @@ export async function obtenerEstadisticasProgreso(): Promise<EstadisticasProgres
       },
       simulaciones: {
         total: totalesSimulaciones,
+        respondidas: respondidasSimulaciones,
         correctas: correctasSimulaciones,
         incorrectas: incorrectasSimulaciones,
         porcentaje: porcentajeSimulaciones,
       },
       evaluaciones: {
         total: totalEvaluacionesDisponibles,
+        respondidas: respondidasEvaluaciones,
         correctas: correctasEvaluaciones,
         incorrectas: incorrectasEvaluaciones,
         porcentaje: porcentajeEvaluaciones,
@@ -166,9 +173,9 @@ async function obtenerTotalSimulaciones() {
   }
 }
 
-async function obtenerTotalEvaluaciones() {
+async function obtenerIdsEvaluacionesActivas(): Promise<number[]> {
   try {
-    const endpoint = getApiUrl("/api/evaluaciones/ejercicios/")
+    const endpoint = getApiUrl("/api/evaluaciones/ejercicios/?activo=true")
     const response = await fetch(endpoint, {
       headers: buildAuthHeaders(),
       cache: "no-store",
@@ -177,22 +184,20 @@ async function obtenerTotalEvaluaciones() {
 
     if (!response.ok) {
       console.error("Error obteniendo total de evaluaciones:", response.status)
-      return 0
+      return []
     }
 
     const data = (await response.json()) as any[] | { results?: any[] }
     const evaluaciones = Array.isArray(data) ? data : data.results ?? []
-    const total = evaluaciones.length
 
-    if (total === 0) {
+    if (evaluaciones.length === 0) {
       console.warn("No se encontraron ejercicios disponibles")
-      return 0
     }
 
-    return total
+    return evaluaciones.map((e: any) => e.id as number)
   } catch (error) {
     console.error("Error obtieniendo total de evaluaciones:", error)
-    return 0
+    return []
   }
 }
 
